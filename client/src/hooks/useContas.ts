@@ -17,11 +17,26 @@ export interface ContasData {
 const STORAGE_KEY = 'ponto-de-apoio-contas';
 const VALOR_DIARIO = 50;
 
+// Função auxiliar para calcular a diferença de dias entre duas datas
+function calcularDiasEntreDatas(dataInicio: string, dataFim: string): number {
+  const inicio = new Date(dataInicio + 'T00:00:00Z');
+  const fim = new Date(dataFim + 'T00:00:00Z');
+  const diferenca = fim.getTime() - inicio.getTime();
+  return Math.floor(diferenca / (1000 * 60 * 60 * 24));
+}
+
+// Função auxiliar para obter a data anterior em formato YYYY-MM-DD
+function obterDataAnterior(data: string, diasAntes: number): string {
+  const d = new Date(data + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - diasAntes);
+  return d.toISOString().split('T')[0];
+}
+
 export function useContas() {
   const [data, setData] = useState<ContasData>({ transacoes: [], ultimaAdicaoAutomatica: undefined });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Carregar dados do localStorage e verificar se precisa adicionar ganho automático
+  // Carregar dados do localStorage e verificar se precisa adicionar ganho automático retroativo
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     let dadosCarregados: ContasData = { transacoes: [], ultimaAdicaoAutomatica: undefined };
@@ -34,21 +49,46 @@ export function useContas() {
       }
     }
     
-    // Verificar se precisa adicionar ganho automático
+    // Obter a data de hoje
     const hoje = new Date().toISOString().split('T')[0];
     const ultimaAdicao = dadosCarregados.ultimaAdicaoAutomatica;
     
+    // Se é a primeira vez ou se há dias pendentes
     if (ultimaAdicao !== hoje) {
-      // Adicionar R$50 automático para hoje
-      const novaTransacao: Transacao = {
-        id: Date.now().toString(),
-        tipo: 'ganho',
-        valor: VALOR_DIARIO,
-        data: hoje,
-        descricao: `Ganho automático do dia ${hoje}`,
-        autoAdicionado: true,
-      };
-      dadosCarregados.transacoes = [novaTransacao, ...dadosCarregados.transacoes];
+      const novasTransacoes: Transacao[] = [];
+      
+      if (!ultimaAdicao) {
+        // Primeira execução: adicionar apenas para hoje
+        const novaTransacao: Transacao = {
+          id: Date.now().toString(),
+          tipo: 'ganho',
+          valor: VALOR_DIARIO,
+          data: hoje,
+          descricao: `Ganho automático do dia ${hoje}`,
+          autoAdicionado: true,
+        };
+        novasTransacoes.push(novaTransacao);
+      } else {
+        // Há dias pendentes: calcular quantos dias se passaram
+        const diasPendentes = calcularDiasEntreDatas(ultimaAdicao, hoje);
+        
+        // Adicionar transações para cada dia pendente (do mais antigo para o mais recente)
+        for (let i = diasPendentes; i > 0; i--) {
+          const dataPendente = obterDataAnterior(hoje, i);
+          const novaTransacao: Transacao = {
+            id: (Date.now() + i).toString(), // ID único para cada dia
+            tipo: 'ganho',
+            valor: VALOR_DIARIO,
+            data: dataPendente,
+            descricao: `Ganho automático do dia ${dataPendente}`,
+            autoAdicionado: true,
+          };
+          novasTransacoes.push(novaTransacao);
+        }
+      }
+      
+      // Adicionar as novas transações no início da lista
+      dadosCarregados.transacoes = [...novasTransacoes, ...dadosCarregados.transacoes];
       dadosCarregados.ultimaAdicaoAutomatica = hoje;
     }
     
