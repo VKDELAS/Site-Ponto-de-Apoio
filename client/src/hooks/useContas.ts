@@ -49,8 +49,12 @@ export function useContas() {
       }
     }
     
-    // Obter a data de hoje
-    const hoje = new Date().toISOString().split('T')[0];
+    // Obter a data de hoje (ajustada para o fuso horário local para evitar problemas de "dia seguinte" precoce)
+    const agora = new Date();
+    const hoje = agora.getFullYear() + '-' + 
+                 String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(agora.getDate()).padStart(2, '0');
+                 
     const ultimaAdicao = dadosCarregados.ultimaAdicaoAutomatica;
     
     // Se é a primeira vez ou se há dias pendentes
@@ -73,21 +77,28 @@ export function useContas() {
         const diasPendentes = calcularDiasEntreDatas(ultimaAdicao, hoje);
         
         // Adicionar transações para cada dia pendente (do mais antigo para o mais recente)
-        for (let i = diasPendentes; i > 0; i--) {
+        // Começamos de i = diasPendentes - 1 para não repetir a ultimaAdicao e chegar até hoje (i=0)
+        for (let i = diasPendentes - 1; i >= 0; i--) {
           const dataPendente = obterDataAnterior(hoje, i);
-          const novaTransacao: Transacao = {
-            id: (Date.now() + i).toString(), // ID único para cada dia
-            tipo: 'ganho',
-            valor: VALOR_DIARIO,
-            data: dataPendente,
-            descricao: `Ganho automático do dia ${dataPendente}`,
-            autoAdicionado: true,
-          };
-          novasTransacoes.push(novaTransacao);
+          
+          // Evitar duplicatas se o dia já existir (segurança extra)
+          const jaExiste = dadosCarregados.transacoes.some(t => t.tipo === 'ganho' && t.data === dataPendente && t.autoAdicionado);
+          
+          if (!jaExiste) {
+            const novaTransacao: Transacao = {
+              id: (Date.now() + i).toString(),
+              tipo: 'ganho',
+              valor: VALOR_DIARIO,
+              data: dataPendente,
+              descricao: `Ganho automático do dia ${dataPendente}`,
+              autoAdicionado: true,
+            };
+            novasTransacoes.push(novaTransacao);
+          }
         }
       }
       
-      // Adicionar as novas transações no início da lista
+      // Adicionar as novas transações
       dadosCarregados.transacoes = [...novasTransacoes, ...dadosCarregados.transacoes];
       dadosCarregados.ultimaAdicaoAutomatica = hoje;
     }
@@ -103,12 +114,16 @@ export function useContas() {
     }
   }, [data, isLoaded]);
 
-  // Verificar a cada minuto se é meia-noite (para sincronizar com novo dia)
+  // Verificar a cada minuto se mudou o dia
   useEffect(() => {
     const intervalo = setInterval(() => {
-      const hoje = new Date().toISOString().split('T')[0];
+      const agora = new Date();
+      const hoje = agora.getFullYear() + '-' + 
+                   String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(agora.getDate()).padStart(2, '0');
+
       setData(prev => {
-        if (prev.ultimaAdicaoAutomatica !== hoje) {
+        if (prev.ultimaAdicaoAutomatica && prev.ultimaAdicaoAutomatica !== hoje) {
           const novaTransacao: Transacao = {
             id: Date.now().toString(),
             tipo: 'ganho',
@@ -125,7 +140,7 @@ export function useContas() {
         }
         return prev;
       });
-    }, 60000); // Verifica a cada 1 minuto
+    }, 60000);
 
     return () => clearInterval(intervalo);
   }, []);
@@ -191,7 +206,10 @@ export function useContas() {
   };
 
   const adicionarDinheiroInicial = (valor: number, descricao: string) => {
-    const hoje = new Date().toISOString().split('T')[0];
+    const agora = new Date();
+    const hoje = agora.getFullYear() + '-' + 
+                 String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(agora.getDate()).padStart(2, '0');
     const novaTransacao: Transacao = {
       id: Date.now().toString(),
       tipo: 'ganho',
@@ -220,8 +238,18 @@ export function useContas() {
 
   const saldo = totalGanhos - totalPagamentos - totalGastos;
 
+  // Ordenar transações: Mais recentes primeiro
+  const transacoesOrdenadas = [...data.transacoes].sort((a, b) => {
+    // Primeiro por data
+    if (a.data !== b.data) {
+      return b.data.localeCompare(a.data);
+    }
+    // Se for a mesma data, por ID (que é timestamp)
+    return b.id.localeCompare(a.id);
+  });
+
   return {
-    data,
+    data: { ...data, transacoes: transacoesOrdenadas },
     isLoaded,
     adicionarGanho,
     adicionarPagamento,

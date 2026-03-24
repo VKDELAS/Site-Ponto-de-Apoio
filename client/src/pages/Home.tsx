@@ -4,22 +4,13 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trash2, Plus, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { useContas } from '@/hooks/useContas';
 import { toast } from 'sonner';
 
 /**
  * PONTO DE APOIO - Controle de Contas
  * Design: Industrial Moderno com Preto e Amarelo
- * 
- * Funcionalidades:
- * - Adição automática de R$50 todo dia à meia-noite
- * - Adicionar dinheiro inicial (para débitos antigos)
- * - Remover dias quando não trabalhou
- * - Registrar pagamentos recebidos
- * - Registrar gastos descontados
- * - Visualizar saldo total devido
- * - Histórico de transações
  */
 
 export default function Home() {
@@ -39,18 +30,30 @@ export default function Home() {
 
   const [dialogAberto, setDialogAberto] = useState<'pagamento' | 'gasto' | 'dinheiro' | null>(null);
   const [novoValor, setNovoValor] = useState('');
-  const [novaData, setNovaData] = useState(new Date().toISOString().split('T')[0]);
+  
+  const getHojeStr = () => {
+    const agora = new Date();
+    return agora.getFullYear() + '-' + 
+           String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(agora.getDate()).padStart(2, '0');
+  };
+
+  const [novaData, setNovaData] = useState(getHojeStr());
   const [descricaoGasto, setDescricaoGasto] = useState('');
   const [descricaoDinheiro, setDescricaoDinheiro] = useState('');
-  const [mostrarCalendario, setMostrarCalendario] = useState(false);
+  const [mostrarCalendario, setMostrarCalendario] = useState(true);
 
-  // Gerar últimos 30 dias para o calendário
+  // Gerar últimos 30 dias para o calendário (ordenados do mais recente para o mais antigo)
   const diasCalendario = useMemo(() => {
     const dias = [];
-    for (let i = 29; i >= 0; i--) {
-      const data = new Date();
-      data.setDate(data.getDate() - i);
-      dias.push(data.toISOString().split('T')[0]);
+    const hoje = new Date();
+    for (let i = 0; i < 30; i++) {
+      const data = new Date(hoje);
+      data.setDate(hoje.getDate() - i);
+      const dataStr = data.getFullYear() + '-' + 
+                      String(data.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(data.getDate()).padStart(2, '0');
+      dias.push(dataStr);
     }
     return dias;
   }, []);
@@ -64,6 +67,11 @@ export default function Home() {
     );
   }, [data.transacoes]);
 
+  const formatarDataExibicao = (dataStr: string) => {
+    const [ano, mes, dia] = dataStr.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
   const handleAdicionarPagamento = () => {
     const valor = parseFloat(novoValor);
     if (!valor || valor <= 0) {
@@ -73,7 +81,7 @@ export default function Home() {
     adicionarPagamento(valor, novaData);
     toast.success(`✓ Pagamento de R$ ${valor.toFixed(2)} registrado`);
     setNovoValor('');
-    setNovaData(new Date().toISOString().split('T')[0]);
+    setNovaData(getHojeStr());
     setDialogAberto(null);
   };
 
@@ -90,7 +98,7 @@ export default function Home() {
     adicionarGasto(valor, novaData, descricaoGasto);
     toast.success(`✓ Gasto de R$ ${valor.toFixed(2)} registrado`);
     setNovoValor('');
-    setNovaData(new Date().toISOString().split('T')[0]);
+    setNovaData(getHojeStr());
     setDescricaoGasto('');
     setDialogAberto(null);
   };
@@ -110,7 +118,7 @@ export default function Home() {
 
   const handleRemoverDia = (dia: string) => {
     removerGanhoDia(dia);
-    toast.success(`✓ Dia ${dia} removido`);
+    toast.success(`✓ Dia ${formatarDataExibicao(dia)} removido`);
   };
 
   if (!isLoaded) {
@@ -125,18 +133,18 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground pb-12">
       {/* Header */}
-      <header className="bg-card border-b-2 border-accent sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
+      <header className="bg-card border-b-2 border-accent sticky top-0 z-50 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-accent">PONTO DE APOIO</h1>
-              <p className="text-muted-foreground text-sm mt-1">Controle de Contas • Adição Automática</p>
+              <h1 className="text-3xl md:text-4xl font-black text-accent tracking-tighter">PONTO DE APOIO</h1>
+              <p className="text-muted-foreground text-xs md:text-sm font-medium uppercase tracking-widest mt-1">Controle de Contas • Gestão Diária</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Ela te deve</p>
-              <p className="text-5xl font-bold text-accent">
+            <div className="text-center md:text-right bg-accent/10 p-4 rounded-xl border border-accent/20 min-w-[200px]">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Saldo Devedor</p>
+              <p className="text-4xl md:text-5xl font-black text-accent">
                 R$ {saldo.toFixed(2)}
               </p>
             </div>
@@ -147,130 +155,154 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           {/* Ganhos */}
-          <Card className="bg-card border-accent border-2 p-6 hover:shadow-lg transition-shadow">
+          <Card className="bg-card border-accent border-2 p-6 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase">Total de Ganhos</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Acumulado</h3>
               <TrendingUp className="w-5 h-5 text-accent" />
             </div>
-            <p className="text-3xl font-bold text-accent">R$ {totalGanhos.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {Math.floor(totalGanhos / 50)} dias trabalhados
-            </p>
+            <p className="text-3xl font-black text-accent">R$ {totalGanhos.toFixed(2)}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs font-bold bg-accent/20 text-accent px-2 py-0.5 rounded">
+                {Math.floor(totalGanhos / 50)} dias
+              </span>
+              <p className="text-[10px] text-muted-foreground uppercase font-medium">Trabalhados</p>
+            </div>
           </Card>
 
           {/* Pagamentos */}
-          <Card className="bg-card border-border border p-6 hover:shadow-lg transition-shadow">
+          <Card className="bg-card border-border border-2 p-6 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase">Pagamentos Recebidos</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pagamentos Recebidos</h3>
               <DollarSign className="w-5 h-5 text-green-500" />
             </div>
-            <p className="text-3xl font-bold text-green-500">R$ {totalPagamentos.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {data.transacoes.filter(t => t.tipo === 'pagamento').length} pagamentos
+            <p className="text-3xl font-black text-green-500">R$ {totalPagamentos.toFixed(2)}</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-medium mt-2">
+              {data.transacoes.filter(t => t.tipo === 'pagamento').length} transações
             </p>
           </Card>
 
           {/* Gastos */}
-          <Card className="bg-card border-border border p-6 hover:shadow-lg transition-shadow">
+          <Card className="bg-card border-border border-2 p-6 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase">Gastos Descontados</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Gastos Descontados</h3>
               <TrendingDown className="w-5 h-5 text-red-500" />
             </div>
-            <p className="text-3xl font-bold text-red-500">R$ {totalGastos.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {data.transacoes.filter(t => t.tipo === 'gasto').length} gastos registrados
+            <p className="text-3xl font-black text-red-500">R$ {totalGastos.toFixed(2)}</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-medium mt-2">
+              {data.transacoes.filter(t => t.tipo === 'gasto').length} registros
             </p>
           </Card>
         </div>
 
         {/* Seção de Calendário de Dias */}
-        <Card className="bg-card border-accent border-2 p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Últimos 30 Dias</h2>
+        <Card className="bg-card border-accent/30 border-2 p-6 mb-10 overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-accent" />
+              <h2 className="text-xl font-black text-foreground uppercase tracking-tight">Presença (Últimos 30 Dias)</h2>
+            </div>
             <button
               onClick={() => setMostrarCalendario(!mostrarCalendario)}
-              className="text-accent hover:text-yellow-400 transition-colors"
+              className="flex items-center gap-1 text-xs font-bold text-accent hover:bg-accent/10 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest"
             >
-              {mostrarCalendario ? '▼' : '▶'} {mostrarCalendario ? 'Ocultar' : 'Mostrar'}
+              {mostrarCalendario ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {mostrarCalendario ? 'Recolher' : 'Expandir'}
             </button>
           </div>
           
           {mostrarCalendario && (
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 lg:grid-cols-10 gap-3">
               {diasCalendario.map((dia) => {
                 const temGanho = diasComGanho.has(dia);
-                const dataObj = new Date(dia);
-                const diaDoMes = dataObj.getDate();
-                const ehHoje = dia === new Date().toISOString().split('T')[0];
+                const [ano, mes, diaNum] = dia.split('-');
+                const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(diaNum));
+                const ehHoje = dia === getHojeStr();
                 
                 return (
                   <button
                     key={dia}
                     onClick={() => temGanho && handleRemoverDia(dia)}
-                    className={`p-3 rounded text-center text-sm font-semibold transition-all ${
+                    className={`relative p-3 rounded-xl text-center transition-all group ${
                       temGanho
-                        ? 'bg-accent text-accent-foreground hover:bg-yellow-600 cursor-pointer border-2 border-accent'
-                        : 'bg-secondary text-muted-foreground border-2 border-border'
-                    } ${ehHoje ? 'ring-2 ring-accent' : ''}`}
-                    title={temGanho ? `Clique para remover o ganho de ${dia}` : `Sem ganho em ${dia}`}
+                        ? 'bg-accent text-accent-foreground hover:scale-105 shadow-sm hover:shadow-md'
+                        : 'bg-secondary/50 text-muted-foreground border border-dashed border-border hover:bg-secondary'
+                    } ${ehHoje ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : ''}`}
+                    title={temGanho ? `Remover ganho de ${formatarDataExibicao(dia)}` : `Sem ganho em ${formatarDataExibicao(dia)}`}
                   >
-                    <div className="text-xs opacity-75">{['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][dataObj.getDay()]}</div>
-                    <div>{diaDoMes}</div>
-                    {temGanho && <div className="text-xs mt-1">✓</div>}
+                    <div className={`text-[10px] font-black uppercase mb-1 ${temGanho ? 'text-accent-foreground/70' : 'text-muted-foreground/50'}`}>
+                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dataObj.getDay()]}
+                    </div>
+                    <div className="text-lg font-black leading-none">{diaNum}</div>
+                    <div className={`text-[9px] font-bold mt-1 ${temGanho ? 'text-accent-foreground/60' : 'text-muted-foreground/40'}`}>
+                      {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][dataObj.getMonth()]}
+                    </div>
+                    {temGanho && (
+                      <div className="absolute -top-1 -right-1 bg-white text-accent rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                        ✓
+                      </div>
+                    )}
+                    {ehHoje && (
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-foreground text-background text-[8px] font-black px-1.5 rounded-full uppercase">
+                        Hoje
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
           )}
-          <p className="text-xs text-muted-foreground mt-4">
-            💡 Clique nos dias amarelos para remover o ganho (quando não trabalhou)
-          </p>
+          <div className="flex items-center gap-2 mt-6 p-3 bg-secondary/30 rounded-lg border border-border/50">
+            <span className="text-lg">💡</span>
+            <p className="text-xs text-muted-foreground font-medium">
+              Os dias em <span className="text-accent font-bold">amarelo</span> indicam que você trabalhou. Clique neles para remover caso tenha faltado.
+            </p>
+          </div>
         </Card>
 
         {/* Botões de Ação */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           <Dialog open={dialogAberto === 'dinheiro'} onOpenChange={(open) => setDialogAberto(open ? 'dinheiro' : null)}>
             <DialogTrigger asChild>
-              <Button className="bg-accent text-accent-foreground hover:bg-yellow-600 h-12 text-base font-semibold">
+              <Button className="bg-accent text-accent-foreground hover:bg-yellow-500 h-14 text-sm font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all">
                 <Plus className="w-5 h-5 mr-2" />
-                Adicionar Dinheiro
+                Saldo Inicial
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-card border-border rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-accent">Adicionar Dinheiro Inicial</DialogTitle>
+                <DialogTitle className="text-accent font-black uppercase tracking-tight">Adicionar Saldo Inicial</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="valor-dinheiro" className="text-foreground">Valor (R$)</Label>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="valor-dinheiro" className="text-xs font-bold uppercase text-muted-foreground">Valor (R$)</Label>
                   <Input
                     id="valor-dinheiro"
                     type="number"
                     placeholder="0.00"
                     value={novoValor}
                     onChange={(e) => setNovoValor(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12 font-bold text-lg"
                     step="0.01"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="descricao-dinheiro" className="text-foreground">Descrição (opcional)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="descricao-dinheiro" className="text-xs font-bold uppercase text-muted-foreground">Descrição</Label>
                   <Input
                     id="descricao-dinheiro"
                     type="text"
-                    placeholder="Ex: Dinheiro que já estava devendo..."
+                    placeholder="Ex: Dívida antiga..."
                     value={descricaoDinheiro}
                     onChange={(e) => setDescricaoDinheiro(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12"
                   />
                 </div>
                 <Button
                   onClick={handleAdicionarDinheiro}
-                  className="w-full bg-accent text-accent-foreground hover:bg-yellow-600"
+                  className="w-full bg-accent text-accent-foreground hover:bg-yellow-500 h-12 font-black uppercase tracking-widest mt-2"
                 >
-                  Confirmar
+                  Confirmar Adição
                 </Button>
               </div>
             </DialogContent>
@@ -278,43 +310,43 @@ export default function Home() {
 
           <Dialog open={dialogAberto === 'pagamento'} onOpenChange={(open) => setDialogAberto(open ? 'pagamento' : null)}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 text-white hover:bg-green-700 h-12 text-base font-semibold">
-                <Plus className="w-5 h-5 mr-2" />
+              <Button className="bg-green-600 text-white hover:bg-green-500 h-14 text-sm font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all">
+                <DollarSign className="w-5 h-5 mr-2" />
                 Registrar Pagamento
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-card border-border rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-green-500">Registrar Pagamento Recebido</DialogTitle>
+                <DialogTitle className="text-green-500 font-black uppercase tracking-tight">Pagamento Recebido</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="valor-pagamento" className="text-foreground">Valor (R$)</Label>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="valor-pagamento" className="text-xs font-bold uppercase text-muted-foreground">Valor Recebido (R$)</Label>
                   <Input
                     id="valor-pagamento"
                     type="number"
                     placeholder="0.00"
                     value={novoValor}
                     onChange={(e) => setNovoValor(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12 font-bold text-lg"
                     step="0.01"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="data-pagamento" className="text-foreground">Data</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="data-pagamento" className="text-xs font-bold uppercase text-muted-foreground">Data do Recebimento</Label>
                   <Input
                     id="data-pagamento"
                     type="date"
                     value={novaData}
                     onChange={(e) => setNovaData(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12 font-bold"
                   />
                 </div>
                 <Button
                   onClick={handleAdicionarPagamento}
-                  className="w-full bg-green-600 text-white hover:bg-green-700"
+                  className="w-full bg-green-600 text-white hover:bg-green-500 h-12 font-black uppercase tracking-widest mt-2"
                 >
-                  Confirmar
+                  Confirmar Recebimento
                 </Button>
               </div>
             </DialogContent>
@@ -322,54 +354,54 @@ export default function Home() {
 
           <Dialog open={dialogAberto === 'gasto'} onOpenChange={(open) => setDialogAberto(open ? 'gasto' : null)}>
             <DialogTrigger asChild>
-              <Button className="bg-red-600 text-white hover:bg-red-700 h-12 text-base font-semibold">
-                <Plus className="w-5 h-5 mr-2" />
+              <Button className="bg-red-600 text-white hover:bg-red-500 h-14 text-sm font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all">
+                <TrendingDown className="w-5 h-5 mr-2" />
                 Adicionar Gasto
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-card border-border rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-red-500">Adicionar Gasto Descontado</DialogTitle>
+                <DialogTitle className="text-red-500 font-black uppercase tracking-tight">Gasto Descontado</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="valor-gasto" className="text-foreground">Valor (R$)</Label>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="valor-gasto" className="text-xs font-bold uppercase text-muted-foreground">Valor do Gasto (R$)</Label>
                   <Input
                     id="valor-gasto"
                     type="number"
                     placeholder="0.00"
                     value={novoValor}
                     onChange={(e) => setNovoValor(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12 font-bold text-lg"
                     step="0.01"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="descricao-gasto" className="text-foreground">Descrição</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="descricao-gasto" className="text-xs font-bold uppercase text-muted-foreground">O que foi comprado?</Label>
                   <Input
                     id="descricao-gasto"
                     type="text"
-                    placeholder="Ex: Uniforme, Transporte..."
+                    placeholder="Ex: Almoço, Passagem..."
                     value={descricaoGasto}
                     onChange={(e) => setDescricaoGasto(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="data-gasto" className="text-foreground">Data</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="data-gasto" className="text-xs font-bold uppercase text-muted-foreground">Data do Gasto</Label>
                   <Input
                     id="data-gasto"
                     type="date"
                     value={novaData}
                     onChange={(e) => setNovaData(e.target.value)}
-                    className="bg-secondary border-border text-foreground"
+                    className="bg-secondary border-border h-12 font-bold"
                   />
                 </div>
                 <Button
                   onClick={handleAdicionarGasto}
-                  className="w-full bg-red-600 text-white hover:bg-red-700"
+                  className="w-full bg-red-600 text-white hover:bg-red-500 h-12 font-black uppercase tracking-widest mt-2"
                 >
-                  Confirmar
+                  Confirmar Gasto
                 </Button>
               </div>
             </DialogContent>
@@ -377,78 +409,89 @@ export default function Home() {
         </div>
 
         {/* Histórico de Transações */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4 text-foreground">Histórico de Transações</h2>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b-2 border-border pb-2">
+            <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Histórico Recente</h2>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-secondary px-2 py-1 rounded">
+              {data.transacoes.length} Registros
+            </span>
+          </div>
+          
           {data.transacoes.length === 0 ? (
-            <Card className="bg-card border-border p-8 text-center">
-              <p className="text-muted-foreground">Nenhuma transação registrada ainda</p>
+            <Card className="bg-card border-border border-2 border-dashed p-12 text-center rounded-2xl">
+              <div className="bg-secondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarIcon className="w-8 h-8 text-muted-foreground/40" />
+              </div>
+              <p className="text-muted-foreground font-bold uppercase text-xs tracking-widest">Nenhuma transação registrada</p>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3">
               {data.transacoes.map((transacao) => (
                 <Card
                   key={transacao.id}
-                  className={`bg-card border-2 p-4 flex items-center justify-between transition-all hover:shadow-lg ${
+                  className={`bg-card border-l-4 p-4 flex items-center justify-between transition-all hover:translate-x-1 shadow-sm hover:shadow-md ${
                     transacao.tipo === 'ganho'
-                      ? 'border-accent'
+                      ? 'border-l-accent'
                       : transacao.tipo === 'pagamento'
-                      ? 'border-green-600'
-                      : 'border-red-600'
+                      ? 'border-l-green-600'
+                      : 'border-l-red-600'
                   }`}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          transacao.tipo === 'ganho'
-                            ? 'bg-accent'
-                            : transacao.tipo === 'pagamento'
-                            ? 'bg-green-500'
-                            : 'bg-red-500'
-                        }`}
-                      />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-foreground">
-                            {transacao.tipo === 'ganho'
-                              ? '📈 Ganho'
-                              : transacao.tipo === 'pagamento'
-                              ? '💰 Pagamento'
-                              : '📉 Gasto'}
-                          </p>
-                          {transacao.autoAdicionado && (
-                            <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">
-                              Automático
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{transacao.descricao}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right mr-4">
-                    <p
-                      className={`text-lg font-bold ${
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         transacao.tipo === 'ganho'
-                          ? 'text-accent'
+                          ? 'bg-accent/10 text-accent'
                           : transacao.tipo === 'pagamento'
-                          ? 'text-green-500'
-                          : 'text-red-500'
+                          ? 'bg-green-500/10 text-green-500'
+                          : 'bg-red-500/10 text-red-500'
                       }`}
                     >
-                      {transacao.tipo === 'ganho' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{transacao.data}</p>
+                      {transacao.tipo === 'ganho' ? <TrendingUp className="w-5 h-5" /> : 
+                       transacao.tipo === 'pagamento' ? <DollarSign className="w-5 h-5" /> : 
+                       <TrendingDown className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-black text-sm uppercase tracking-tight text-foreground">
+                          {transacao.tipo === 'ganho' ? 'Ganho Diário' : 
+                           transacao.tipo === 'pagamento' ? 'Pagamento' : 'Gasto'}
+                        </p>
+                        {transacao.autoAdicionado && (
+                          <span className="text-[8px] font-black bg-accent text-accent-foreground px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                            Auto
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground font-medium line-clamp-1">{transacao.descricao}</p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      deletarTransacao(transacao.id);
-                      toast.success('Transação deletada');
-                    }}
-                    className="ml-2 p-2 hover:bg-secondary rounded transition-colors text-muted-foreground hover:text-foreground"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p
+                        className={`text-lg font-black tracking-tighter ${
+                          transacao.tipo === 'ganho'
+                            ? 'text-accent'
+                            : transacao.tipo === 'pagamento'
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                        }`}
+                      >
+                        {transacao.tipo === 'ganho' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
+                      </p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatarDataExibicao(transacao.data)}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        deletarTransacao(transacao.id);
+                        toast.success('Registro removido');
+                      }}
+                      className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-muted-foreground/40 hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -457,10 +500,15 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p>PONTO DE APOIO © 2026 - Controle de Contas com Adição Automática</p>
-          <p className="text-xs mt-2">R$50 adicionados automaticamente todo dia à meia-noite</p>
+      <footer className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-border">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-muted-foreground">
+          <div className="text-center md:text-left">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]">PONTO DE APOIO © 2026</p>
+            <p className="text-[9px] font-medium uppercase tracking-widest mt-1">Sistema de Gestão de Créditos e Débitos</p>
+          </div>
+          <div className="bg-secondary/50 px-4 py-2 rounded-full border border-border">
+            <p className="text-[9px] font-bold uppercase tracking-widest">R$50,00 adicionados automaticamente todo dia</p>
+          </div>
         </div>
       </footer>
     </div>
