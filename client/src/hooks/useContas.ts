@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export interface Transacao {
   id: string;
@@ -9,12 +10,6 @@ export interface Transacao {
   autoAdicionado?: boolean;
 }
 
-export interface ContasData {
-  transacoes: Transacao[];
-  ultimaAdicaoAutomatica?: string;
-}
-
-const STORAGE_KEY = 'ponto-de-apoio-contas';
 const VALOR_DIARIO = 50;
 
 // Função auxiliar para calcular a diferença de dias entre duas datas
@@ -33,231 +28,250 @@ function obterDataAnterior(data: string, diasAntes: number): string {
 }
 
 export function useContas() {
-  const [data, setData] = useState<ContasData>({ transacoes: [], ultimaAdicaoAutomatica: undefined });
+  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Carregar dados do localStorage e verificar se precisa adicionar ganho automático retroativo
+  // Carregar dados do Supabase e verificar se precisa adicionar ganho automático retroativo
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    let dadosCarregados: ContasData = { transacoes: [], ultimaAdicaoAutomatica: undefined };
-    
-    if (stored) {
+    async function carregarDados() {
       try {
-        dadosCarregados = JSON.parse(stored);
-      } catch (e) {
-        console.error('Erro ao carregar dados:', e);
-      }
-    }
-    
-    // Obter a data de hoje (ajustada para o fuso horário local para evitar problemas de "dia seguinte" precoce)
-    const agora = new Date();
-    const hoje = agora.getFullYear() + '-' + 
-                 String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
-                 String(agora.getDate()).padStart(2, '0');
-                 
-    const ultimaAdicao = dadosCarregados.ultimaAdicaoAutomatica;
-    
-    // Se é a primeira vez ou se há dias pendentes
-    if (ultimaAdicao !== hoje) {
-      const novasTransacoes: Transacao[] = [];
-      
-      if (!ultimaAdicao) {
-        // Primeira execução: adicionar apenas para hoje
-        const novaTransacao: Transacao = {
-          id: Date.now().toString(),
-          tipo: 'ganho',
-          valor: VALOR_DIARIO,
-          data: hoje,
-          descricao: `Ganho automático do dia ${hoje}`,
-          autoAdicionado: true,
-        };
-        novasTransacoes.push(novaTransacao);
-      } else {
-        // Há dias pendentes: calcular quantos dias se passaram
-        const diasPendentes = calcularDiasEntreDatas(ultimaAdicao, hoje);
-        
-        // Adicionar transações para cada dia pendente (do mais antigo para o mais recente)
-        // Começamos de i = diasPendentes - 1 para não repetir a ultimaAdicao e chegar até hoje (i=0)
-        for (let i = diasPendentes - 1; i >= 0; i--) {
-          const dataPendente = obterDataAnterior(hoje, i);
+        // 1. Buscar transações
+        const { data: transacoesData, error: transacoesError } = await supabase
+          .from('transacoes')
+          .select('*')
+          .order('data', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        if (transacoesError) throw transacoesError;
+
+        // 2. Buscar última adição automática
+        const { data: metaData, error: metaError } = await supabase
+          .from('metadados')
+          .select('valor')
+          .eq('chave', 'ultima_adicao_automatica')
+          .single();
+
+        if (metaError && metaError.code !== 'PGRST116') throw metaError;
+
+        const agora = new Date();
+        const hoje = agora.getFullYear() + '-' + 
+                     String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
+                     String(agora.getDate()).padStart(2, '0');
+                     
+        const ultimaAdicao = metaData?.valor;
+        let transacoesAtuais = transacoesData?.map(t => ({
+          id: t.id,
+          tipo: t.tipo,
+          valor: parseFloat(t.valor),
+          data: t.data,
+          descricao: t.descricao,
+          autoAdicionado: t.auto_adicionado
+        })) || [];
+
+        // 3. Verificar se há dias pendentes
+        if (ultimaAdicao !== hoje) {
+          const novasTransacoes: any[] = [];
           
-          // Evitar duplicatas se o dia já existir (segurança extra)
-          const jaExiste = dadosCarregados.transacoes.some(t => t.tipo === 'ganho' && t.data === dataPendente && t.autoAdicionado);
-          
-          if (!jaExiste) {
-            const novaTransacao: Transacao = {
-              id: (Date.now() + i).toString(),
+          if (!ultimaAdicao) {
+            // Primeira execução: adicionar apenas para hoje
+            novasTransacoes.push({
               tipo: 'ganho',
               valor: VALOR_DIARIO,
-              data: dataPendente,
-              descricao: `Ganho automático do dia ${dataPendente}`,
-              autoAdicionado: true,
-            };
-            novasTransacoes.push(novaTransacao);
+              data: hoje,
+              descricao: `Ganho automático do dia ${hoje}`,
+              auto_adicionado: true,
+            });
+          } else {
+            const diasPendentes = calcularDiasEntreDatas(ultimaAdicao, hoje);
+            for (let i = diasPendentes - 1; i >= 0; i--) {
+              const dataPendente = obterDataAnterior(hoje, i);
+              const jaExiste = transacoesAtuais.some(t => t.tipo === 'ganho' && t.data === dataPendente && t.autoAdicionado);
+              
+              if (!jaExiste) {
+                novasTransacoes.push({
+                  tipo: 'ganho',
+                  valor: VALOR_DIARIO,
+                  data: dataPendente,
+                  descricao: `Ganho automático do dia ${dataPendente}`,
+                  auto_adicionado: true,
+                });
+              }
+            }
           }
+
+          if (novasTransacoes.length > 0) {
+            const { data: inseridas, error: insertError } = await supabase
+              .from('transacoes')
+              .insert(novasTransacoes)
+              .select();
+
+            if (insertError) throw insertError;
+
+            const formatadas = inseridas.map(t => ({
+              id: t.id,
+              tipo: t.tipo,
+              valor: parseFloat(t.valor),
+              data: t.data,
+              descricao: t.descricao,
+              autoAdicionado: t.auto_adicionado
+            }));
+            transacoesAtuais = [...formatadas, ...transacoesAtuais];
+          }
+
+          // Atualizar metadados
+          await supabase
+            .from('metadados')
+            .upsert({ chave: 'ultima_adicao_automatica', valor: hoje });
         }
+
+        setTransacoes(transacoesAtuais);
+      } catch (e) {
+        console.error('Erro ao carregar dados do Supabase:', e);
+      } finally {
+        setIsLoaded(true);
       }
-      
-      // Adicionar as novas transações
-      dadosCarregados.transacoes = [...novasTransacoes, ...dadosCarregados.transacoes];
-      dadosCarregados.ultimaAdicaoAutomatica = hoje;
     }
-    
-    setData(dadosCarregados);
-    setIsLoaded(true);
+
+    carregarDados();
   }, []);
 
-  // Salvar dados no localStorage sempre que mudar
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const adicionarPagamento = async (valor: number, data: string) => {
+    const { data: inserida, error } = await supabase
+      .from('transacoes')
+      .insert([{
+        tipo: 'pagamento',
+        valor,
+        data,
+        descricao: `Pagamento recebido em ${data}`,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao adicionar pagamento:', error);
+      return;
     }
-  }, [data, isLoaded]);
 
-  // Verificar a cada minuto se mudou o dia
-  useEffect(() => {
-    const intervalo = setInterval(() => {
-      const agora = new Date();
-      const hoje = agora.getFullYear() + '-' + 
-                   String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
-                   String(agora.getDate()).padStart(2, '0');
-
-      setData(prev => {
-        if (prev.ultimaAdicaoAutomatica && prev.ultimaAdicaoAutomatica !== hoje) {
-          const novaTransacao: Transacao = {
-            id: Date.now().toString(),
-            tipo: 'ganho',
-            valor: VALOR_DIARIO,
-            data: hoje,
-            descricao: `Ganho automático do dia ${hoje}`,
-            autoAdicionado: true,
-          };
-          return {
-            ...prev,
-            transacoes: [novaTransacao, ...prev.transacoes],
-            ultimaAdicaoAutomatica: hoje,
-          };
-        }
-        return prev;
-      });
-    }, 60000);
-
-    return () => clearInterval(intervalo);
-  }, []);
-
-  const adicionarGanho = (valor: number, data: string) => {
-    const novaTransacao: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'ganho',
-      valor,
-      data,
-      descricao: `Ganho do dia ${data}`,
-    };
-    setData(prev => ({
-      ...prev,
-      transacoes: [novaTransacao, ...prev.transacoes],
-    }));
+    setTransacoes(prev => [{
+      id: inserida.id,
+      tipo: inserida.tipo,
+      valor: parseFloat(inserida.valor),
+      data: inserida.data,
+      descricao: inserida.descricao,
+    }, ...prev]);
   };
 
-  const adicionarPagamento = (valor: number, data: string) => {
-    const novaTransacao: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'pagamento',
-      valor,
-      data,
-      descricao: `Pagamento recebido em ${data}`,
-    };
-    setData(prev => ({
-      ...prev,
-      transacoes: [novaTransacao, ...prev.transacoes],
-    }));
+  const adicionarGasto = async (valor: number, data: string, descricao: string) => {
+    const { data: inserida, error } = await supabase
+      .from('transacoes')
+      .insert([{
+        tipo: 'gasto',
+        valor,
+        data,
+        descricao,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao adicionar gasto:', error);
+      return;
+    }
+
+    setTransacoes(prev => [{
+      id: inserida.id,
+      tipo: inserida.tipo,
+      valor: parseFloat(inserida.valor),
+      data: inserida.data,
+      descricao: inserida.descricao,
+    }, ...prev]);
   };
 
-  const adicionarGasto = (valor: number, data: string, descricao: string) => {
-    const novaTransacao: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'gasto',
-      valor,
-      data,
-      descricao,
-    };
-    setData(prev => ({
-      ...prev,
-      transacoes: [novaTransacao, ...prev.transacoes],
-    }));
+  const deletarTransacao = async (id: string) => {
+    const { error } = await supabase
+      .from('transacoes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao deletar transação:', error);
+      return;
+    }
+
+    setTransacoes(prev => prev.filter(t => t.id !== id));
   };
 
-  const deletarTransacao = (id: string) => {
-    setData(prev => ({
-      ...prev,
-      transacoes: prev.transacoes.filter(t => t.id !== id),
-    }));
+  const removerGanhoDia = async (data: string) => {
+    const { error } = await supabase
+      .from('transacoes')
+      .delete()
+      .eq('tipo', 'ganho')
+      .eq('data', data)
+      .eq('auto_adicionado', true);
+
+    if (error) {
+      console.error('Erro ao remover ganho do dia:', error);
+      return;
+    }
+
+    setTransacoes(prev => prev.filter(t => !(t.tipo === 'ganho' && t.data === data && t.autoAdicionado)));
   };
 
-  const removerGanhoDia = (data: string) => {
-    setData(prev => ({
-      ...prev,
-      transacoes: prev.transacoes.filter(t => !(t.tipo === 'ganho' && t.data === data && t.autoAdicionado)),
-    }));
-  };
-
-  const obterGanhoDia = (dataStr: string) => {
-    return data.transacoes.find((t: Transacao) => t.tipo === 'ganho' && t.data === dataStr && t.autoAdicionado);
-  };
-
-  const adicionarDinheiroInicial = (valor: number, descricao: string) => {
+  const adicionarDinheiroInicial = async (valor: number, descricao: string) => {
     const agora = new Date();
     const hoje = agora.getFullYear() + '-' + 
                  String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
                  String(agora.getDate()).padStart(2, '0');
-    const novaTransacao: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'ganho',
-      valor,
-      data: hoje,
-      descricao: descricao || 'Dinheiro inicial adicionado',
-    };
-    setData(prev => ({
-      ...prev,
-      transacoes: [novaTransacao, ...prev.transacoes],
-    }));
+
+    const { data: inserida, error } = await supabase
+      .from('transacoes')
+      .insert([{
+        tipo: 'ganho',
+        valor,
+        data: hoje,
+        descricao: descricao || 'Dinheiro inicial adicionado',
+        auto_adicionado: false,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao adicionar dinheiro inicial:', error);
+      return;
+    }
+
+    setTransacoes(prev => [{
+      id: inserida.id,
+      tipo: inserida.tipo,
+      valor: parseFloat(inserida.valor),
+      data: inserida.data,
+      descricao: inserida.descricao,
+    }, ...prev]);
   };
 
   // Calcular totais
-  const totalGanhos = data.transacoes
+  const totalGanhos = transacoes
     .filter(t => t.tipo === 'ganho')
     .reduce((sum, t) => sum + t.valor, 0);
 
-  const totalPagamentos = data.transacoes
+  const totalPagamentos = transacoes
     .filter(t => t.tipo === 'pagamento')
     .reduce((sum, t) => sum + t.valor, 0);
 
-  const totalGastos = data.transacoes
+  const totalGastos = transacoes
     .filter(t => t.tipo === 'gasto')
     .reduce((sum, t) => sum + t.valor, 0);
 
   const saldo = totalGanhos - totalPagamentos - totalGastos;
 
-  // Ordenar transações: Mais recentes primeiro
-  const transacoesOrdenadas = [...data.transacoes].sort((a, b) => {
-    // Primeiro por data
-    if (a.data !== b.data) {
-      return b.data.localeCompare(a.data);
-    }
-    // Se for a mesma data, por ID (que é timestamp)
-    return b.id.localeCompare(a.id);
-  });
-
   return {
-    data: { ...data, transacoes: transacoesOrdenadas },
+    data: { transacoes },
     isLoaded,
-    adicionarGanho,
     adicionarPagamento,
     adicionarGasto,
     adicionarDinheiroInicial,
     deletarTransacao,
     removerGanhoDia,
-    obterGanhoDia,
     totalGanhos,
     totalPagamentos,
     totalGastos,
