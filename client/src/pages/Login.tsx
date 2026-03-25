@@ -64,7 +64,13 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error('Erro de autenticação:', error);
-      toast.error(error.message || 'Erro na autenticação');
+      let mensagem = error.message || 'Erro na autenticação';
+      
+      if (mensagem.includes('placeholder.supabase.co') || mensagem.includes('Failed to fetch')) {
+        mensagem = 'Erro de conexão: O Supabase não está configurado corretamente. Verifique seu arquivo .env';
+      }
+      
+      toast.error(mensagem);
     } finally {
       setCarregando(false);
     }
@@ -81,7 +87,13 @@ export default function Login() {
       if (error) throw error;
     } catch (error: any) {
       console.error('Erro Google OAuth:', error);
-      toast.error(error.message || 'Erro ao conectar com Google');
+      let mensagem = error.message || 'Erro ao conectar com Google';
+      
+      if (mensagem.includes('placeholder.supabase.co') || mensagem.includes('Failed to fetch')) {
+        mensagem = 'Erro de conexão: O Supabase não está configurado corretamente. Verifique seu arquivo .env';
+      }
+      
+      toast.error(mensagem);
     }
   };
 
