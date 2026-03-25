@@ -10,9 +10,9 @@ export interface Transacao {
   autoAdicionado?: boolean;
 }
 
+const STORAGE_KEY = 'ponto-de-apoio-contas-backup';
 const VALOR_DIARIO = 50;
 
-// Função auxiliar para calcular a diferença de dias entre duas datas
 function calcularDiasEntreDatas(dataInicio: string, dataFim: string): number {
   const inicio = new Date(dataInicio + 'T00:00:00Z');
   const fim = new Date(dataFim + 'T00:00:00Z');
@@ -20,7 +20,6 @@ function calcularDiasEntreDatas(dataInicio: string, dataFim: string): number {
   return Math.floor(diferenca / (1000 * 60 * 60 * 24));
 }
 
-// Função auxiliar para obter a data anterior em formato YYYY-MM-DD
 function obterDataAnterior(data: string, diasAntes: number): string {
   const d = new Date(data + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() - diasAntes);
@@ -31,11 +30,10 @@ export function useContas() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Carregar dados do Supabase e verificar se precisa adicionar ganho automático retroativo
   useEffect(() => {
     async function carregarDados() {
       try {
-        // 1. Buscar transações
+        // Tentar carregar do Supabase
         const { data: transacoesData, error: transacoesError } = await supabase
           .from('transacoes')
           .select('*')
@@ -44,7 +42,6 @@ export function useContas() {
 
         if (transacoesError) throw transacoesError;
 
-        // 2. Buscar última adição automática
         const { data: metaData, error: metaError } = await supabase
           .from('metadados')
           .select('valor')
@@ -68,12 +65,9 @@ export function useContas() {
           autoAdicionado: t.auto_adicionado
         })) || [];
 
-        // 3. Verificar se há dias pendentes
         if (ultimaAdicao !== hoje) {
           const novasTransacoes: any[] = [];
-          
           if (!ultimaAdicao) {
-            // Primeira execução: adicionar apenas para hoje
             novasTransacoes.push({
               tipo: 'ganho',
               valor: VALOR_DIARIO,
@@ -86,7 +80,6 @@ export function useContas() {
             for (let i = diasPendentes - 1; i >= 0; i--) {
               const dataPendente = obterDataAnterior(hoje, i);
               const jaExiste = transacoesAtuais.some(t => t.tipo === 'ganho' && t.data === dataPendente && t.autoAdicionado);
-              
               if (!jaExiste) {
                 novasTransacoes.push({
                   tipo: 'ganho',
@@ -105,28 +98,32 @@ export function useContas() {
               .insert(novasTransacoes)
               .select();
 
-            if (insertError) throw insertError;
-
-            const formatadas = inseridas.map(t => ({
-              id: t.id,
-              tipo: t.tipo,
-              valor: parseFloat(t.valor),
-              data: t.data,
-              descricao: t.descricao,
-              autoAdicionado: t.auto_adicionado
-            }));
-            transacoesAtuais = [...formatadas, ...transacoesAtuais];
+            if (!insertError && inseridas) {
+              const formatadas = inseridas.map(t => ({
+                id: t.id,
+                tipo: t.tipo,
+                valor: parseFloat(t.valor),
+                data: t.data,
+                descricao: t.descricao,
+                autoAdicionado: t.auto_adicionado
+              }));
+              transacoesAtuais = [...formatadas, ...transacoesAtuais];
+            }
           }
 
-          // Atualizar metadados
           await supabase
             .from('metadados')
             .upsert({ chave: 'ultima_adicao_automatica', valor: hoje });
         }
 
         setTransacoes(transacoesAtuais);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transacoesAtuais));
       } catch (e) {
-        console.error('Erro ao carregar dados do Supabase:', e);
+        console.warn('Supabase não disponível, usando backup local:', e);
+        const backup = localStorage.getItem(STORAGE_KEY);
+        if (backup) {
+          setTransacoes(JSON.parse(backup));
+        }
       } finally {
         setIsLoaded(true);
       }
@@ -136,85 +133,67 @@ export function useContas() {
   }, []);
 
   const adicionarPagamento = async (valor: number, data: string) => {
-    const { data: inserida, error } = await supabase
-      .from('transacoes')
-      .insert([{
+    const novaTransacaoLocal: Transacao = {
+      id: Date.now().toString(),
+      tipo: 'pagamento',
+      valor,
+      data,
+      descricao: `Pagamento recebido em ${data}`,
+    };
+
+    setTransacoes(prev => [novaTransacaoLocal, ...prev]);
+
+    try {
+      await supabase.from('transacoes').insert([{
         tipo: 'pagamento',
         valor,
         data,
         descricao: `Pagamento recebido em ${data}`,
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao adicionar pagamento:', error);
-      return;
+      }]);
+    } catch (e) {
+      console.error('Erro ao salvar no Supabase:', e);
     }
-
-    setTransacoes(prev => [{
-      id: inserida.id,
-      tipo: inserida.tipo,
-      valor: parseFloat(inserida.valor),
-      data: inserida.data,
-      descricao: inserida.descricao,
-    }, ...prev]);
   };
 
   const adicionarGasto = async (valor: number, data: string, descricao: string) => {
-    const { data: inserida, error } = await supabase
-      .from('transacoes')
-      .insert([{
+    const novaTransacaoLocal: Transacao = {
+      id: Date.now().toString(),
+      tipo: 'gasto',
+      valor,
+      data,
+      descricao,
+    };
+
+    setTransacoes(prev => [novaTransacaoLocal, ...prev]);
+
+    try {
+      await supabase.from('transacoes').insert([{
         tipo: 'gasto',
         valor,
         data,
         descricao,
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao adicionar gasto:', error);
-      return;
+      }]);
+    } catch (e) {
+      console.error('Erro ao salvar no Supabase:', e);
     }
-
-    setTransacoes(prev => [{
-      id: inserida.id,
-      tipo: inserida.tipo,
-      valor: parseFloat(inserida.valor),
-      data: inserida.data,
-      descricao: inserida.descricao,
-    }, ...prev]);
   };
 
   const deletarTransacao = async (id: string) => {
-    const { error } = await supabase
-      .from('transacoes')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Erro ao deletar transação:', error);
-      return;
-    }
-
     setTransacoes(prev => prev.filter(t => t.id !== id));
+    try {
+      await supabase.from('transacoes').delete().eq('id', id);
+    } catch (e) {
+      console.error('Erro ao deletar no Supabase:', e);
+    }
   };
 
   const removerGanhoDia = async (data: string) => {
-    const { error } = await supabase
-      .from('transacoes')
-      .delete()
-      .eq('tipo', 'ganho')
-      .eq('data', data)
-      .eq('auto_adicionado', true);
-
-    if (error) {
-      console.error('Erro ao remover ganho do dia:', error);
-      return;
-    }
-
     setTransacoes(prev => prev.filter(t => !(t.tipo === 'ganho' && t.data === data && t.autoAdicionado)));
+    try {
+      await supabase.from('transacoes').delete().eq('tipo', 'ganho').eq('data', data).eq('auto_adicionado', true);
+    } catch (e) {
+      console.error('Erro ao remover no Supabase:', e);
+    }
   };
 
   const adicionarDinheiroInicial = async (valor: number, descricao: string) => {
@@ -223,33 +202,29 @@ export function useContas() {
                  String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
                  String(agora.getDate()).padStart(2, '0');
 
-    const { data: inserida, error } = await supabase
-      .from('transacoes')
-      .insert([{
+    const novaTransacaoLocal: Transacao = {
+      id: Date.now().toString(),
+      tipo: 'ganho',
+      valor,
+      data: hoje,
+      descricao: descricao || 'Dinheiro inicial adicionado',
+    };
+
+    setTransacoes(prev => [novaTransacaoLocal, ...prev]);
+
+    try {
+      await supabase.from('transacoes').insert([{
         tipo: 'ganho',
         valor,
         data: hoje,
         descricao: descricao || 'Dinheiro inicial adicionado',
         auto_adicionado: false,
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao adicionar dinheiro inicial:', error);
-      return;
+      }]);
+    } catch (e) {
+      console.error('Erro ao salvar no Supabase:', e);
     }
-
-    setTransacoes(prev => [{
-      id: inserida.id,
-      tipo: inserida.tipo,
-      valor: parseFloat(inserida.valor),
-      data: inserida.data,
-      descricao: inserida.descricao,
-    }, ...prev]);
   };
 
-  // Calcular totais
   const totalGanhos = transacoes
     .filter(t => t.tipo === 'ganho')
     .reduce((sum, t) => sum + t.valor, 0);
