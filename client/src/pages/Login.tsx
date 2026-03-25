@@ -5,17 +5,42 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { User, Lock, Mail, ArrowRight, Chrome } from 'lucide-react';
+import { User, Lock, Mail, ArrowRight, Chrome, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmaSenha, setConfirmaSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [modo, setModo] = useState<'login' | 'cadastro'>('login');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmaSenha, setMostrarConfirmaSenha] = useState(false);
+
+  // Validações
+  const senhasIguais = modo === 'cadastro' ? senha === confirmaSenha && senha.length > 0 : true;
+  const senhaValida = senha.length >= 6;
+  const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!emailValido) {
+      toast.error('Email inválido');
+      return;
+    }
+
+    if (modo === 'cadastro') {
+      if (!senhaValida) {
+        toast.error('Senha deve ter no mínimo 6 caracteres');
+        return;
+      }
+      if (!senhasIguais) {
+        toast.error('As senhas não conferem');
+        return;
+      }
+    }
+
     setCarregando(true);
 
     try {
@@ -38,6 +63,7 @@ export default function Login() {
         toast.success('Cadastro realizado! Verifique seu e-mail para confirmar.');
       }
     } catch (error: any) {
+      console.error('Erro de autenticação:', error);
       toast.error(error.message || 'Erro na autenticação');
     } finally {
       setCarregando(false);
@@ -54,6 +80,7 @@ export default function Login() {
       });
       if (error) throw error;
     } catch (error: any) {
+      console.error('Erro Google OAuth:', error);
       toast.error(error.message || 'Erro ao conectar com Google');
     }
   };
@@ -117,57 +144,150 @@ export default function Login() {
             </div>
 
             <form onSubmit={handleAuth} className="space-y-5">
-              <div className="space-y-2">
+              {/* Campo Email */}
+              <motion.div 
+                className="space-y-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
                 <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">E-mail Corporativo</Label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#FFD700] transition-colors" />
+                <motion.div 
+                  className="relative group"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#FFD700] transition-all duration-300" />
                   <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="seu@email.com"
-                    className="bg-black/40 border-white/5 focus:border-[#FFD700]/50 h-14 pl-12 text-white placeholder:text-gray-700 font-medium transition-all rounded-xl"
+                    className="bg-black/40 border-white/5 focus:border-[#FFD700]/50 h-14 pl-12 text-white placeholder:text-gray-700 font-medium transition-all duration-300 rounded-xl hover:bg-black/50 hover:border-white/10 focus:bg-black/60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] focus:shadow-[inset_0_2px_8px_rgba(255,215,0,0.1),0_0_20px_rgba(255,215,0,0.1)]"
                     required
                   />
-                </div>
-              </div>
+                  {email && emailValido && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                    >
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    </motion.div>
+                  )}
+                </motion.div>
+              </motion.div>
 
-              <div className="space-y-2">
+              {/* Campo Senha */}
+              <motion.div 
+                className="space-y-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
                 <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Senha de Acesso</Label>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#FFD700] transition-colors" />
+                <motion.div 
+                  className="relative group"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#FFD700] transition-all duration-300" />
                   <Input
-                    type="password"
+                    type={mostrarSenha ? "text" : "password"}
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="••••••••"
-                    className="bg-black/40 border-white/5 focus:border-[#FFD700]/50 h-14 pl-12 text-white placeholder:text-gray-700 font-medium transition-all rounded-xl"
+                    className="bg-black/40 border-white/5 focus:border-[#FFD700]/50 h-14 pl-12 pr-12 text-white placeholder:text-gray-700 font-medium transition-all duration-300 rounded-xl hover:bg-black/50 hover:border-white/10 focus:bg-black/60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] focus:shadow-[inset_0_2px_8px_rgba(255,215,0,0.1),0_0_20px_rgba(255,215,0,0.1)]"
                     required
                   />
-                </div>
-              </div>
+                  <motion.button
+                    type="button"
+                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                    whileHover={{ scale: 1.1 }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#FFD700] transition-colors duration-300"
+                  >
+                    {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </motion.button>
+                </motion.div>
+              </motion.div>
 
-              <Button
-                type="submit"
-                disabled={carregando}
-                className="w-full h-14 bg-[#FFD700] text-black font-black uppercase tracking-widest hover:bg-[#FFD700]/90 transition-all shadow-[0_10px_20px_rgba(255,215,0,0.15)] group rounded-xl mt-2"
-              >
-                {carregando ? (
-                  <span className="flex items-center gap-2">
-                    <motion.span 
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full" 
-                    />
-                    Processando...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    {modo === 'login' ? 'AUTENTICAR' : 'REGISTRAR'}
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
+              {/* Campo Confirmar Senha (apenas em cadastro) */}
+              <AnimatePresence>
+                {modo === 'cadastro' && (
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, x: -20, height: 0 }}
+                    animate={{ opacity: 1, x: 0, height: "auto" }}
+                    exit={{ opacity: 0, x: -20, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Confirme a Senha</Label>
+                    <motion.div 
+                      className="relative group"
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#FFD700] transition-all duration-300" />
+                      <Input
+                        type={mostrarConfirmaSenha ? "text" : "password"}
+                        value={confirmaSenha}
+                        onChange={(e) => setConfirmaSenha(e.target.value)}
+                        placeholder="••••••••"
+                        className={`bg-black/40 border-white/5 focus:border-[#FFD700]/50 h-14 pl-12 pr-12 text-white placeholder:text-gray-700 font-medium transition-all duration-300 rounded-xl hover:bg-black/50 hover:border-white/10 focus:bg-black/60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] focus:shadow-[inset_0_2px_8px_rgba(255,215,0,0.1),0_0_20px_rgba(255,215,0,0.1)] ${
+                          confirmaSenha && !senhasIguais ? 'border-red-500/50 focus:border-red-500' : ''
+                        }`}
+                        required
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => setMostrarConfirmaSenha(!mostrarConfirmaSenha)}
+                        whileHover={{ scale: 1.1 }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#FFD700] transition-colors duration-300"
+                      >
+                        {mostrarConfirmaSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </motion.button>
+                    </motion.div>
+                    {confirmaSenha && !senhasIguais && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 text-red-500 text-[10px] font-bold"
+                      >
+                        <AlertCircle className="w-3 h-3" />
+                        As senhas não conferem
+                      </motion.div>
+                    )}
+                  </motion.div>
                 )}
-              </Button>
+              </AnimatePresence>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Button
+                  type="submit"
+                  disabled={carregando || (modo === 'cadastro' && !senhasIguais)}
+                  className="w-full h-14 bg-[#FFD700] text-black font-black uppercase tracking-widest hover:bg-[#FFD700]/90 transition-all shadow-[0_10px_20px_rgba(255,215,0,0.15)] group rounded-xl mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {carregando ? (
+                    <span className="flex items-center gap-2">
+                      <motion.span 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full" 
+                      />
+                      Processando...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      {modo === 'login' ? 'AUTENTICAR' : 'REGISTRAR'}
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </motion.div>
             </form>
 
             <div className="relative my-8">
@@ -179,19 +299,30 @@ export default function Login() {
               </div>
             </div>
 
-            <Button
-              type="button"
-              onClick={handleGoogleLogin}
-              variant="outline"
-              className="w-full h-14 bg-transparent border-white/10 text-white hover:bg-white/5 hover:border-[#FFD700]/30 transition-all rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center justify-center gap-3"
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
-              <Chrome className="w-5 h-5 text-[#FFD700]" />
-              Google Account
-            </Button>
+              <Button
+                type="button"
+                onClick={handleGoogleLogin}
+                variant="outline"
+                className="w-full h-14 bg-transparent border-white/10 text-white hover:bg-white/5 hover:border-[#FFD700]/30 transition-all rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_0_20px_rgba(255,215,0,0.1)]"
+              >
+                <Chrome className="w-5 h-5 text-[#FFD700]" />
+                Google Account
+              </Button>
+            </motion.div>
 
             <div className="mt-8 pt-6 border-t border-white/5 text-center">
-              <button
-                onClick={() => setModo(modo === 'login' ? 'cadastro' : 'login')}
+              <motion.button
+                onClick={() => {
+                  setModo(modo === 'login' ? 'cadastro' : 'login');
+                  setEmail('');
+                  setSenha('');
+                  setConfirmaSenha('');
+                }}
+                whileHover={{ scale: 1.05 }}
                 className="text-[11px] font-black text-gray-500 hover:text-[#FFD700] uppercase tracking-widest transition-colors"
               >
                 {modo === 'login' ? (
@@ -199,14 +330,14 @@ export default function Login() {
                 ) : (
                   <>Já possui credenciais? <span className="text-[#FFD700] ml-1 underline underline-offset-4">Voltar ao Login</span></>
                 )}
-              </button>
+              </motion.button>
             </div>
           </div>
         </Card>
         
         <div className="mt-8 text-center">
           <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.6em] pointer-events-none">
-            Industrial Management System v3.0
+            Industrial Management System v3.1
           </p>
         </div>
       </motion.div>
