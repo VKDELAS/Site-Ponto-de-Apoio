@@ -4,7 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Calendar as CalendarIcon, ChevronDown, ChevronRight, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useContas } from '@/hooks/useContas';
 import { toast } from 'sonner';
 
@@ -21,13 +22,14 @@ export default function Home() {
     adicionarGasto,
     adicionarDinheiroInicial,
     deletarTransacao,
-    removerGanhoDia,
+    alternarDiaTrabalhado,
     totalGanhos,
     totalPagamentos,
     totalGastos,
     saldo,
   } = useContas();
 
+  const { signOut, user } = useAuth();
   const [dialogAberto, setDialogAberto] = useState<'pagamento' | 'gasto' | 'dinheiro' | null>(null);
   const [novoValor, setNovoValor] = useState('');
   
@@ -116,9 +118,8 @@ export default function Home() {
     setDialogAberto(null);
   };
 
-  const handleRemoverDia = (dia: string) => {
-    removerGanhoDia(dia);
-    toast.success(`✓ Dia ${formatarDataExibicao(dia)} removido`);
+  const handleAlternarDia = (dia: string) => {
+    alternarDiaTrabalhado(dia);
   };
 
   if (!isLoaded) {
@@ -138,9 +139,20 @@ export default function Home() {
       <header className="bg-card border-b-2 border-accent sticky top-0 z-50 shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-accent tracking-tighter">PONTO DE APOIO</h1>
-              <p className="text-muted-foreground text-xs md:text-sm font-medium uppercase tracking-widest mt-1">Controle de Contas • Gestão Diária</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-black text-accent tracking-tighter">PONTO DE APOIO</h1>
+                <p className="text-muted-foreground text-xs md:text-sm font-medium uppercase tracking-widest mt-1">Controle de Contas • {user?.email}</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => signOut()}
+                className="text-muted-foreground hover:text-red-500 transition-colors"
+                title="Sair"
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
             </div>
             <div className="text-center md:text-right bg-accent/10 p-4 rounded-xl border border-accent/20 min-w-[200px]">
               <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Saldo Devedor</p>
@@ -223,13 +235,13 @@ export default function Home() {
                 return (
                   <button
                     key={dia}
-                    onClick={() => temGanho && handleRemoverDia(dia)}
+                    onClick={() => handleAlternarDia(dia)}
                     className={`relative p-3 rounded-xl text-center transition-all group ${
                       temGanho
                         ? 'bg-accent text-accent-foreground hover:scale-105 shadow-sm hover:shadow-md'
                         : 'bg-secondary/50 text-muted-foreground border border-dashed border-border hover:bg-secondary'
                     } ${ehHoje ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : ''}`}
-                    title={temGanho ? `Remover ganho de ${formatarDataExibicao(dia)}` : `Sem ganho em ${formatarDataExibicao(dia)}`}
+                    title={temGanho ? `Remover dia trabalhado de ${formatarDataExibicao(dia)}` : `Marcar dia trabalhado em ${formatarDataExibicao(dia)} (+R$50)`}
                   >
                     <div className={`text-[10px] font-black uppercase mb-1 ${temGanho ? 'text-accent-foreground/70' : 'text-muted-foreground/50'}`}>
                       {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dataObj.getDay()]}

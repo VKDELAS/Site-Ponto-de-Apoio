@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export interface Transacao {
   id: string;
@@ -13,230 +15,201 @@ export interface Transacao {
 const STORAGE_KEY = 'ponto-de-apoio-contas-backup';
 const VALOR_DIARIO = 50;
 
-function calcularDiasEntreDatas(dataInicio: string, dataFim: string): number {
-  const inicio = new Date(dataInicio + 'T00:00:00Z');
-  const fim = new Date(dataFim + 'T00:00:00Z');
-  const diferenca = fim.getTime() - inicio.getTime();
-  return Math.floor(diferenca / (1000 * 60 * 60 * 24));
-}
-
-function obterDataAnterior(data: string, diasAntes: number): string {
-  const d = new Date(data + 'T00:00:00Z');
-  d.setUTCDate(d.getUTCDate() - diasAntes);
-  return d.toISOString().split('T')[0];
-}
-
 export function useContas() {
+  const { user } = useAuth();
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    async function carregarDados() {
-      try {
-        // Tentar carregar do Supabase
-        const { data: transacoesData, error: transacoesError } = await supabase
-          .from('transacoes')
-          .select('*')
-          .order('data', { ascending: false })
-          .order('created_at', { ascending: false });
-
-        if (transacoesError) throw transacoesError;
-
-        const { data: metaData, error: metaError } = await supabase
-          .from('metadados')
-          .select('valor')
-          .eq('chave', 'ultima_adicao_automatica')
-          .single();
-
-        if (metaError && metaError.code !== 'PGRST116') throw metaError;
-
-        const agora = new Date();
-        const hoje = agora.getFullYear() + '-' + 
-                     String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
-                     String(agora.getDate()).padStart(2, '0');
-                     
-        const ultimaAdicao = metaData?.valor;
-        let transacoesAtuais = transacoesData?.map(t => ({
-          id: t.id,
-          tipo: t.tipo,
-          valor: parseFloat(t.valor),
-          data: t.data,
-          descricao: t.descricao,
-          autoAdicionado: t.auto_adicionado
-        })) || [];
-
-        if (ultimaAdicao !== hoje) {
-          const novasTransacoes: any[] = [];
-          if (!ultimaAdicao) {
-            novasTransacoes.push({
-              tipo: 'ganho',
-              valor: VALOR_DIARIO,
-              data: hoje,
-              descricao: `Ganho automático do dia ${hoje}`,
-              auto_adicionado: true,
-            });
-          } else {
-            const diasPendentes = calcularDiasEntreDatas(ultimaAdicao, hoje);
-            for (let i = diasPendentes - 1; i >= 0; i--) {
-              const dataPendente = obterDataAnterior(hoje, i);
-              const jaExiste = transacoesAtuais.some(t => t.tipo === 'ganho' && t.data === dataPendente && t.autoAdicionado);
-              if (!jaExiste) {
-                novasTransacoes.push({
-                  tipo: 'ganho',
-                  valor: VALOR_DIARIO,
-                  data: dataPendente,
-                  descricao: `Ganho automático do dia ${dataPendente}`,
-                  auto_adicionado: true,
-                });
-              }
-            }
-          }
-
-          if (novasTransacoes.length > 0) {
-            const { data: inseridas, error: insertError } = await supabase
-              .from('transacoes')
-              .insert(novasTransacoes)
-              .select();
-
-            if (!insertError && inseridas) {
-              const formatadas = inseridas.map(t => ({
-                id: t.id,
-                tipo: t.tipo,
-                valor: parseFloat(t.valor),
-                data: t.data,
-                descricao: t.descricao,
-                autoAdicionado: t.auto_adicionado
-              }));
-              transacoesAtuais = [...formatadas, ...transacoesAtuais];
-            }
-          }
-
-          await supabase
-            .from('metadados')
-            .upsert({ chave: 'ultima_adicao_automatica', valor: hoje });
-        }
-
-        setTransacoes(transacoesAtuais);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(transacoesAtuais));
-      } catch (e) {
-        console.warn('Supabase não disponível, usando backup local:', e);
-        const backup = localStorage.getItem(STORAGE_KEY);
-        if (backup) {
-          setTransacoes(JSON.parse(backup));
-        }
-      } finally {
-        setIsLoaded(true);
-      }
-    }
-
-    carregarDados();
-  }, []);
-
-  const adicionarPagamento = async (valor: number, data: string) => {
-    const novaTransacaoLocal: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'pagamento',
-      valor,
-      data,
-      descricao: `Pagamento recebido em ${data}`,
-    };
-
-    setTransacoes(prev => [novaTransacaoLocal, ...prev]);
+  async function carregarDados() {
+    if (!user) return;
 
     try {
-      await supabase.from('transacoes').insert([{
+      const { data: transacoesData, error: transacoesError } = await supabase
+        .from('transacoes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('data', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (transacoesError) throw transacoesError;
+
+      const transacoesAtuais = transacoesData?.map(t => ({
+        id: t.id,
+        tipo: t.tipo,
+        valor: parseFloat(t.valor),
+        data: t.data,
+        descricao: t.descricao,
+        autoAdicionado: t.auto_adicionado
+      })) || [];
+
+      setTransacoes(transacoesAtuais);
+      localStorage.setItem(`${STORAGE_KEY}_${user.id}`, JSON.stringify(transacoesAtuais));
+    } catch (e) {
+      console.error('Erro no Supabase:', e);
+      const backup = localStorage.getItem(`${STORAGE_KEY}_${user?.id}`);
+      if (backup) setTransacoes(JSON.parse(backup));
+    } finally {
+      setIsLoaded(true);
+    }
+  }
+
+  useEffect(() => {
+    carregarDados();
+  }, [user]);
+
+  const alternarDiaTrabalhado = async (data: string) => {
+    if (!user) return;
+
+    const diaExistente = transacoes.find(
+      t => t.tipo === 'ganho' && t.data === data && t.autoAdicionado
+    );
+
+    if (diaExistente) {
+      // Remover o dia
+      try {
+        const { error } = await supabase
+          .from('transacoes')
+          .delete()
+          .eq('id', diaExistente.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+        setTransacoes(prev => prev.filter(t => t.id !== diaExistente.id));
+        toast.success(`Dia ${data.split('-').reverse().join('/')} removido`);
+      } catch (e) {
+        toast.error('Erro ao remover dia');
+      }
+    } else {
+      // Adicionar o dia
+      try {
+        const { data: inserido, error } = await supabase
+          .from('transacoes')
+          .insert([{
+            user_id: user.id,
+            tipo: 'ganho',
+            valor: VALOR_DIARIO,
+            data: data,
+            descricao: `Ganho automático do dia ${data}`,
+            auto_adicionado: true,
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (inserido) {
+          setTransacoes(prev => [{
+            id: inserido.id,
+            tipo: 'ganho',
+            valor: parseFloat(inserido.valor),
+            data: inserido.data,
+            descricao: inserido.descricao,
+            autoAdicionado: true
+          }, ...prev]);
+          toast.success(`Dia ${data.split('-').reverse().join('/')} marcado como trabalhado (+R$50)`);
+        }
+      } catch (e) {
+        toast.error('Erro ao marcar dia');
+      }
+    }
+  };
+
+  const adicionarPagamento = async (valor: number, data: string) => {
+    if (!user) return;
+    try {
+      const { data: inserido, error } = await supabase.from('transacoes').insert([{
+        user_id: user.id,
         tipo: 'pagamento',
         valor,
         data,
         descricao: `Pagamento recebido em ${data}`,
-      }]);
+      }]).select().single();
+
+      if (error) throw error;
+      if (inserido) {
+        setTransacoes(prev => [{
+          id: inserido.id,
+          tipo: 'pagamento',
+          valor: parseFloat(inserido.valor),
+          data: inserido.data,
+          descricao: inserido.descricao,
+        }, ...prev]);
+      }
     } catch (e) {
-      console.error('Erro ao salvar no Supabase:', e);
+      toast.error('Erro ao salvar pagamento');
     }
   };
 
   const adicionarGasto = async (valor: number, data: string, descricao: string) => {
-    const novaTransacaoLocal: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'gasto',
-      valor,
-      data,
-      descricao,
-    };
-
-    setTransacoes(prev => [novaTransacaoLocal, ...prev]);
-
+    if (!user) return;
     try {
-      await supabase.from('transacoes').insert([{
+      const { data: inserido, error } = await supabase.from('transacoes').insert([{
+        user_id: user.id,
         tipo: 'gasto',
         valor,
         data,
         descricao,
-      }]);
+      }]).select().single();
+
+      if (error) throw error;
+      if (inserido) {
+        setTransacoes(prev => [{
+          id: inserido.id,
+          tipo: 'gasto',
+          valor: parseFloat(inserido.valor),
+          data: inserido.data,
+          descricao: inserido.descricao,
+        }, ...prev]);
+      }
     } catch (e) {
-      console.error('Erro ao salvar no Supabase:', e);
+      toast.error('Erro ao salvar gasto');
     }
   };
 
   const deletarTransacao = async (id: string) => {
-    setTransacoes(prev => prev.filter(t => t.id !== id));
     try {
-      await supabase.from('transacoes').delete().eq('id', id);
+      const { error } = await supabase.from('transacoes').delete().eq('id', id);
+      if (error) throw error;
+      setTransacoes(prev => prev.filter(t => t.id !== id));
     } catch (e) {
-      console.error('Erro ao deletar no Supabase:', e);
-    }
-  };
-
-  const removerGanhoDia = async (data: string) => {
-    setTransacoes(prev => prev.filter(t => !(t.tipo === 'ganho' && t.data === data && t.autoAdicionado)));
-    try {
-      await supabase.from('transacoes').delete().eq('tipo', 'ganho').eq('data', data).eq('auto_adicionado', true);
-    } catch (e) {
-      console.error('Erro ao remover no Supabase:', e);
+      toast.error('Erro ao deletar transação');
     }
   };
 
   const adicionarDinheiroInicial = async (valor: number, descricao: string) => {
+    if (!user) return;
     const agora = new Date();
     const hoje = agora.getFullYear() + '-' + 
                  String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
                  String(agora.getDate()).padStart(2, '0');
 
-    const novaTransacaoLocal: Transacao = {
-      id: Date.now().toString(),
-      tipo: 'ganho',
-      valor,
-      data: hoje,
-      descricao: descricao || 'Dinheiro inicial adicionado',
-    };
-
-    setTransacoes(prev => [novaTransacaoLocal, ...prev]);
-
     try {
-      await supabase.from('transacoes').insert([{
+      const { data: inserido, error } = await supabase.from('transacoes').insert([{
+        user_id: user.id,
         tipo: 'ganho',
         valor,
         data: hoje,
         descricao: descricao || 'Dinheiro inicial adicionado',
         auto_adicionado: false,
-      }]);
+      }]).select().single();
+
+      if (error) throw error;
+      if (inserido) {
+        setTransacoes(prev => [{
+          id: inserido.id,
+          tipo: 'ganho',
+          valor: parseFloat(inserido.valor),
+          data: inserido.data,
+          descricao: inserido.descricao,
+        }, ...prev]);
+      }
     } catch (e) {
-      console.error('Erro ao salvar no Supabase:', e);
+      toast.error('Erro ao adicionar saldo');
     }
   };
 
-  const totalGanhos = transacoes
-    .filter(t => t.tipo === 'ganho')
-    .reduce((sum, t) => sum + t.valor, 0);
-
-  const totalPagamentos = transacoes
-    .filter(t => t.tipo === 'pagamento')
-    .reduce((sum, t) => sum + t.valor, 0);
-
-  const totalGastos = transacoes
-    .filter(t => t.tipo === 'gasto')
-    .reduce((sum, t) => sum + t.valor, 0);
-
+  const totalGanhos = transacoes.filter(t => t.tipo === 'ganho').reduce((sum, t) => sum + t.valor, 0);
+  const totalPagamentos = transacoes.filter(t => t.tipo === 'pagamento').reduce((sum, t) => sum + t.valor, 0);
+  const totalGastos = transacoes.filter(t => t.tipo === 'gasto').reduce((sum, t) => sum + t.valor, 0);
   const saldo = totalGanhos - totalPagamentos - totalGastos;
 
   return {
@@ -246,10 +219,11 @@ export function useContas() {
     adicionarGasto,
     adicionarDinheiroInicial,
     deletarTransacao,
-    removerGanhoDia,
+    alternarDiaTrabalhado,
     totalGanhos,
     totalPagamentos,
     totalGastos,
     saldo,
+    recarregar: carregarDados
   };
 }
