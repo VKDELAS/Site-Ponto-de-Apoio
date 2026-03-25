@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -124,10 +125,40 @@ export default function Home() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin mb-4 text-4xl">⏳</div>
-          <p className="text-lg">Carregando...</p>
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center relative overflow-hidden">
+        {/* Background Decorativo */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.03, 0.08, 0.03],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#FFD700] rounded-full blur-[150px]" 
+          />
+        </div>
+        
+        <div className="text-center z-10">
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-[#FFD700] rounded-2xl mb-6 shadow-[0_0_30px_rgba(255,215,0,0.3)]"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="w-10 h-10 text-black font-black text-2xl"
+            >
+              ⏳
+            </motion.div>
+          </motion.div>
+          <motion.p 
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-lg font-bold text-[#FFD700] uppercase tracking-widest"
+          >
+            Carregando suas contas...
+          </motion.p>
         </div>
       </div>
     );
@@ -279,7 +310,7 @@ export default function Home() {
             <DialogTrigger asChild>
               <Button className="bg-accent text-accent-foreground hover:bg-yellow-500 h-14 text-sm font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all">
                 <Plus className="w-5 h-5 mr-2" />
-                Saldo Inicial
+                Adicionar Saldo
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border rounded-2xl">

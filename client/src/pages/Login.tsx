@@ -52,15 +52,23 @@ export default function Login() {
         if (error) throw error;
         toast.success('Bem-vindo de volta!');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password: senha,
           options: {
             emailRedirectTo: window.location.origin,
           }
         });
-        if (error) throw error;
-        toast.success('Cadastro realizado! Verifique seu e-mail para confirmar.');
+        if (signUpError) throw signUpError;
+        
+        // Fazer login automático após cadastro
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: senha,
+        });
+        if (signInError) throw signInError;
+        
+        toast.success('Cadastro realizado com sucesso! Bem-vindo!');
       }
     } catch (error: any) {
       console.error('Erro de autenticação:', error);
@@ -82,6 +90,10 @@ export default function Login() {
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       });
       if (error) throw error;
@@ -91,6 +103,8 @@ export default function Login() {
       
       if (mensagem.includes('placeholder.supabase.co') || mensagem.includes('Failed to fetch')) {
         mensagem = 'Erro de conexão: O Supabase não está configurado corretamente. Verifique seu arquivo .env';
+      } else if (mensagem.includes('validation_failed') || mensagem.includes('Unsupported provider')) {
+        mensagem = 'Google não está habilitado no seu projeto Supabase. Acesse: Supabase Dashboard > Authentication > Providers > Google e ative-o.';
       }
       
       toast.error(mensagem);
