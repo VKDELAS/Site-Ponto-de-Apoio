@@ -31,12 +31,15 @@ export function useContas() {
         .order('data', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (transacoesError) throw transacoesError;
+      if (transacoesError) {
+        console.error('Erro ao carregar:', transacoesError);
+        throw transacoesError;
+      }
 
       const transacoesAtuais = transacoesData?.map(t => ({
         id: t.id,
         tipo: t.tipo,
-        valor: parseFloat(t.valor),
+        valor: typeof t.valor === 'string' ? parseFloat(t.valor) : t.valor,
         data: t.data,
         descricao: t.descricao,
         autoAdicionado: t.auto_adicionado
@@ -45,7 +48,7 @@ export function useContas() {
       setTransacoes(transacoesAtuais);
       localStorage.setItem(`${STORAGE_KEY}_${user.id}`, JSON.stringify(transacoesAtuais));
     } catch (e) {
-      console.error('Erro no Supabase:', e);
+      console.error('Erro no Supabase ao carregar:', e);
       const backup = localStorage.getItem(`${STORAGE_KEY}_${user?.id}`);
       if (backup) setTransacoes(JSON.parse(backup));
     } finally {
@@ -55,11 +58,11 @@ export function useContas() {
 
   useEffect(() => {
     carregarDados();
-  }, [user]);
+  }, [user?.id]);
 
   const alternarDiaTrabalhado = async (data: string) => {
     if (!user) {
-      toast.error('Usuario nao autenticado');
+      toast.error('Usuário não autenticado');
       return;
     }
 
@@ -73,8 +76,7 @@ export function useContas() {
         const { error } = await supabase
           .from('transacoes')
           .delete()
-          .eq('id', diaExistente.id)
-          .eq('user_id', user.id);
+          .eq('id', diaExistente.id);
 
         if (error) {
           console.error('Erro ao remover dia:', error);
@@ -110,7 +112,7 @@ export function useContas() {
           setTransacoes(prev => [{
             id: inserido.id,
             tipo: 'ganho',
-            valor: parseFloat(inserido.valor),
+            valor: typeof inserido.valor === 'string' ? parseFloat(inserido.valor) : inserido.valor,
             data: inserido.data,
             descricao: inserido.descricao,
             autoAdicionado: true
@@ -126,7 +128,7 @@ export function useContas() {
 
   const adicionarPagamento = async (valor: number, data: string) => {
     if (!user) {
-      toast.error('Usuario nao autenticado');
+      toast.error('Usuário não autenticado');
       return;
     }
     try {
@@ -146,7 +148,7 @@ export function useContas() {
         setTransacoes(prev => [{
           id: inserido.id,
           tipo: 'pagamento',
-          valor: parseFloat(inserido.valor),
+          valor: typeof inserido.valor === 'string' ? parseFloat(inserido.valor) : inserido.valor,
           data: inserido.data,
           descricao: inserido.descricao,
         }, ...prev]);
@@ -160,7 +162,7 @@ export function useContas() {
 
   const adicionarGasto = async (valor: number, data: string, descricao: string) => {
     if (!user) {
-      toast.error('Usuario nao autenticado');
+      toast.error('Usuário não autenticado');
       return;
     }
     try {
@@ -180,7 +182,7 @@ export function useContas() {
         setTransacoes(prev => [{
           id: inserido.id,
           tipo: 'gasto',
-          valor: parseFloat(inserido.valor),
+          valor: typeof inserido.valor === 'string' ? parseFloat(inserido.valor) : inserido.valor,
           data: inserido.data,
           descricao: inserido.descricao,
         }, ...prev]);
@@ -198,8 +200,7 @@ export function useContas() {
       const { error } = await supabase
         .from('transacoes')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
       if (error) throw error;
       setTransacoes(prev => prev.filter(t => t.id !== id));
     } catch (e) {
@@ -209,7 +210,7 @@ export function useContas() {
 
   const adicionarDinheiroInicial = async (valor: number, descricao: string) => {
     if (!user) {
-      toast.error('Usuario nao autenticado');
+      toast.error('Usuário não autenticado');
       return;
     }
     const agora = new Date();
@@ -235,7 +236,7 @@ export function useContas() {
         setTransacoes(prev => [{
           id: inserido.id,
           tipo: 'ganho',
-          valor: parseFloat(inserido.valor),
+          valor: typeof inserido.valor === 'string' ? parseFloat(inserido.valor) : inserido.valor,
           data: inserido.data,
           descricao: inserido.descricao,
         }, ...prev]);

@@ -47,7 +47,7 @@ export function FloatingLabelInput({
         animate={{
           y: isActive ? -28 : 0,
           scale: isActive ? 0.85 : 1,
-          x: isActive ? (icon ? -8 : 0) : (icon ? 40 : 0),
+          x: isActive ? 0 : (icon ? 40 : 0),
         }}
         transition={{ duration: 0.2 }}
         className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none transition-colors duration-300 ${

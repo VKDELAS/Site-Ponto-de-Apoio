@@ -112,26 +112,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 relative overflow-hidden font-sans">
-      {/* Background Decorativo Dinâmico */}
+      {/* Background Decorativo Estático (Melhora Performance) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.03, 0.08, 0.03],
-            rotate: [0, 90, 0]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#FFD700] rounded-full blur-[150px]" 
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.05, 0.1, 0.05],
-            rotate: [0, -90, 0]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#FFD700] rounded-full blur-[150px]" 
-        />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#FFD700] opacity-[0.05] rounded-full blur-[150px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#FFD700] opacity-[0.08] rounded-full blur-[150px]" />
       </div>
 
       <motion.div
@@ -176,12 +160,12 @@ export default function Login() {
                 transition={{ delay: 0.1 }}
               >
                 <FloatingLabelInput
-                  label="E-mail Corporativo"
+                  label="Email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   icon={<Mail className="w-4 h-4" />}
-                  showCheckmark={true}
+                  showCheckmark={false}
                   isValid={emailValido && email.length > 0}
                   autoComplete="email"
                   required
@@ -195,7 +179,7 @@ export default function Login() {
                 transition={{ delay: 0.2 }}
               >
                 <FloatingLabelInput
-                  label="Senha de Acesso"
+                  label="Senha"
                   type="password"
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
