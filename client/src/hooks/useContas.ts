@@ -58,7 +58,10 @@ export function useContas() {
   }, [user]);
 
   const alternarDiaTrabalhado = async (data: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Usuario nao autenticado');
+      return;
+    }
 
     const diaExistente = transacoes.find(
       t => t.tipo === 'ganho' && t.data === data && t.autoAdicionado
@@ -73,11 +76,15 @@ export function useContas() {
           .eq('id', diaExistente.id)
           .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao remover dia:', error);
+          throw error;
+        }
         setTransacoes(prev => prev.filter(t => t.id !== diaExistente.id));
         toast.success(`Dia ${data.split('-').reverse().join('/')} removido`);
-      } catch (e) {
-        toast.error('Erro ao remover dia');
+      } catch (e: any) {
+        console.error('Erro ao remover dia:', e);
+        toast.error(e.message || 'Erro ao remover dia');
       }
     } else {
       // Adicionar o dia
@@ -95,7 +102,10 @@ export function useContas() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao inserir dia:', error);
+          throw error;
+        }
         if (inserido) {
           setTransacoes(prev => [{
             id: inserido.id,
@@ -107,14 +117,18 @@ export function useContas() {
           }, ...prev]);
           toast.success(`Dia ${data.split('-').reverse().join('/')} marcado como trabalhado (+R$50)`);
         }
-      } catch (e) {
-        toast.error('Erro ao marcar dia');
+      } catch (e: any) {
+        console.error('Erro ao marcar dia:', e);
+        toast.error(e.message || 'Erro ao marcar dia');
       }
     }
   };
 
   const adicionarPagamento = async (valor: number, data: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Usuario nao autenticado');
+      return;
+    }
     try {
       const { data: inserido, error } = await supabase.from('transacoes').insert([{
         user_id: user.id,
@@ -124,7 +138,10 @@ export function useContas() {
         descricao: `Pagamento recebido em ${data}`,
       }]).select().single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir pagamento:', error);
+        throw error;
+      }
       if (inserido) {
         setTransacoes(prev => [{
           id: inserido.id,
@@ -133,14 +150,19 @@ export function useContas() {
           data: inserido.data,
           descricao: inserido.descricao,
         }, ...prev]);
+        toast.success(`Pagamento de R$ ${valor.toFixed(2)} registrado`);
       }
-    } catch (e) {
-      toast.error('Erro ao salvar pagamento');
+    } catch (e: any) {
+      console.error('Erro ao salvar pagamento:', e);
+      toast.error(e.message || 'Erro ao salvar pagamento');
     }
   };
 
   const adicionarGasto = async (valor: number, data: string, descricao: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Usuario nao autenticado');
+      return;
+    }
     try {
       const { data: inserido, error } = await supabase.from('transacoes').insert([{
         user_id: user.id,
@@ -150,7 +172,10 @@ export function useContas() {
         descricao,
       }]).select().single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir gasto:', error);
+        throw error;
+      }
       if (inserido) {
         setTransacoes(prev => [{
           id: inserido.id,
@@ -159,9 +184,11 @@ export function useContas() {
           data: inserido.data,
           descricao: inserido.descricao,
         }, ...prev]);
+        toast.success(`Gasto de R$ ${valor.toFixed(2)} registrado`);
       }
-    } catch (e) {
-      toast.error('Erro ao salvar gasto');
+    } catch (e: any) {
+      console.error('Erro ao salvar gasto:', e);
+      toast.error(e.message || 'Erro ao salvar gasto');
     }
   };
 
@@ -181,7 +208,10 @@ export function useContas() {
   };
 
   const adicionarDinheiroInicial = async (valor: number, descricao: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Usuario nao autenticado');
+      return;
+    }
     const agora = new Date();
     const hoje = agora.getFullYear() + '-' + 
                  String(agora.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -197,7 +227,10 @@ export function useContas() {
         auto_adicionado: false,
       }]).select().single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir saldo:', error);
+        throw error;
+      }
       if (inserido) {
         setTransacoes(prev => [{
           id: inserido.id,
@@ -206,9 +239,11 @@ export function useContas() {
           data: inserido.data,
           descricao: inserido.descricao,
         }, ...prev]);
+        toast.success(`R$ ${valor.toFixed(2)} adicionado ao saldo`);
       }
-    } catch (e) {
-      toast.error('Erro ao adicionar saldo');
+    } catch (e: any) {
+      console.error('Erro ao adicionar saldo:', e);
+      toast.error(e.message || 'Erro ao adicionar saldo');
     }
   };
 
