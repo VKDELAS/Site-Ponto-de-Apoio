@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
@@ -15,6 +14,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [emailFocused, setEmailFocused] = useState(false)
+  const [passwordFocused, setPasswordFocused] = useState(false)
   const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
@@ -57,40 +58,66 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px]">
         <Card className="border-none shadow-xl rounded-xl overflow-hidden bg-white dark:bg-card">
           <CardContent className="p-6 md:p-8">
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-6">
               {error && (
                 <Alert variant="destructive" className="rounded-lg">
                   <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
                 </Alert>
               )}
               
-              <div className="space-y-1">
-                <Input
+              {/* Floating Label - Email */}
+              <div className="relative">
+                <input
                   id="email"
                   type="email"
-                  placeholder="E-mail"
-                  className="h-12 text-base rounded-lg border-gray-200 focus:border-primary focus:ring-primary transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(email === "")}
                   required
+                  className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                  placeholder="E-mail"
                 />
+                <label
+                  htmlFor="email"
+                  className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                    emailFocused || email
+                      ? "top-2 text-xs text-primary"
+                      : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  E-mail
+                </label>
               </div>
 
-              <div className="space-y-1">
-                <Input
+              {/* Floating Label - Senha */}
+              <div className="relative">
+                <input
                   id="password"
                   type="password"
-                  placeholder="Senha"
-                  className="h-12 text-base rounded-lg border-gray-200 focus:border-primary focus:ring-primary transition-all"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(password === "")}
                   required
+                  className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                  placeholder="Senha"
                 />
+                <label
+                  htmlFor="password"
+                  className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                    passwordFocused || password
+                      ? "top-2 text-xs text-primary"
+                      : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  Senha
+                </label>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full h-12 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm transition-transform active:scale-[0.98]" 
+                className="w-full h-12 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm transition-all active:scale-[0.98] hover:shadow-md" 
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -109,7 +136,7 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <div className="border-t border-gray-100 my-6"></div>
+              <div className="border-t border-gray-100 dark:border-gray-700 my-6"></div>
 
               <div className="text-center">
                 <Link href="/auth/sign-up">

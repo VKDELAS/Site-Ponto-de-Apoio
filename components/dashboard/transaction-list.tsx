@@ -1,8 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus, TrendingUp, TrendingDown, HandCoins, MoreVertical, Calendar } from "lucide-react"
+import { TrendingUp, TrendingDown, HandCoins, MoreVertical, Calendar } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -66,10 +65,6 @@ export function TransactionList({ transactions, onEdit, onAddNew }: Props) {
     <Card className="flex flex-col h-[450px] border-none shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
         <CardTitle className="text-lg font-bold">Transações</CardTitle>
-        <Button size="sm" onClick={onAddNew} className="h-8 px-2 bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-1" />
-          Novo
-        </Button>
       </CardHeader>
       <CardContent className="flex-1 p-0">
         <ScrollArea className="h-[370px] px-6 pb-6">

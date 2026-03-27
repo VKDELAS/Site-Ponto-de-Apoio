@@ -93,19 +93,10 @@ export function DashboardHeader({
         <div className="flex items-center gap-3">
           <Button 
             onClick={onAddTransaction} 
-            className="hidden sm:flex bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Novo
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={onAddTransaction} 
-            className="sm:hidden h-10 w-10 rounded-xl border-primary text-primary"
-          >
-            <Plus className="h-5 w-5" />
+            <span>Nova Transação</span>
           </Button>
 
           <DropdownMenu>
