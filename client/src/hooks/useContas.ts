@@ -15,6 +15,9 @@ export interface Transacao {
 const STORAGE_KEY = 'ponto-de-apoio-contas-backup';
 const VALOR_DIARIO = 50;
 
+// Mensagem de erro personalizada conforme solicitado
+const ERROR_MESSAGE = "Ops! Ocorreu um erro ao salvar os dados. Verifique sua conexão ou tente novamente mais tarde.";
+
 export function useContas() {
   const { user } = useAuth();
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
@@ -51,6 +54,7 @@ export function useContas() {
       console.error('Erro no Supabase ao carregar:', e);
       const backup = localStorage.getItem(`${STORAGE_KEY}_${user?.id}`);
       if (backup) setTransacoes(JSON.parse(backup));
+      toast.error("Não foi possível carregar os dados do servidor. Usando backup local.");
     } finally {
       setIsLoaded(true);
     }
@@ -71,25 +75,21 @@ export function useContas() {
     );
 
     if (diaExistente) {
-      // Remover o dia
       try {
         const { error } = await supabase
           .from('transacoes')
           .delete()
           .eq('id', diaExistente.id);
 
-        if (error) {
-          console.error('Erro ao remover dia:', error);
-          throw error;
-        }
+        if (error) throw error;
+        
         setTransacoes(prev => prev.filter(t => t.id !== diaExistente.id));
         toast.success(`Dia ${data.split('-').reverse().join('/')} removido`);
       } catch (e: any) {
         console.error('Erro ao remover dia:', e);
-        toast.error(e.message || 'Erro ao remover dia');
+        toast.error(ERROR_MESSAGE);
       }
     } else {
-      // Adicionar o dia
       try {
         const { data: inserido, error } = await supabase
           .from('transacoes')
@@ -104,10 +104,8 @@ export function useContas() {
           .select()
           .single();
 
-        if (error) {
-          console.error('Erro ao inserir dia:', error);
-          throw error;
-        }
+        if (error) throw error;
+        
         if (inserido) {
           setTransacoes(prev => [{
             id: inserido.id,
@@ -121,7 +119,7 @@ export function useContas() {
         }
       } catch (e: any) {
         console.error('Erro ao marcar dia:', e);
-        toast.error(e.message || 'Erro ao marcar dia');
+        toast.error(ERROR_MESSAGE);
       }
     }
   };
@@ -140,10 +138,8 @@ export function useContas() {
         descricao: `Pagamento recebido em ${data}`,
       }]).select().single();
 
-      if (error) {
-        console.error('Erro ao inserir pagamento:', error);
-        throw error;
-      }
+      if (error) throw error;
+      
       if (inserido) {
         setTransacoes(prev => [{
           id: inserido.id,
@@ -156,7 +152,7 @@ export function useContas() {
       }
     } catch (e: any) {
       console.error('Erro ao salvar pagamento:', e);
-      toast.error(e.message || 'Erro ao salvar pagamento');
+      toast.error(ERROR_MESSAGE);
     }
   };
 
@@ -174,10 +170,8 @@ export function useContas() {
         descricao,
       }]).select().single();
 
-      if (error) {
-        console.error('Erro ao inserir gasto:', error);
-        throw error;
-      }
+      if (error) throw error;
+      
       if (inserido) {
         setTransacoes(prev => [{
           id: inserido.id,
@@ -190,7 +184,7 @@ export function useContas() {
       }
     } catch (e: any) {
       console.error('Erro ao salvar gasto:', e);
-      toast.error(e.message || 'Erro ao salvar gasto');
+      toast.error(ERROR_MESSAGE);
     }
   };
 
@@ -201,10 +195,14 @@ export function useContas() {
         .from('transacoes')
         .delete()
         .eq('id', id);
+      
       if (error) throw error;
+      
       setTransacoes(prev => prev.filter(t => t.id !== id));
+      toast.success('Transação removida com sucesso');
     } catch (e) {
-      toast.error('Erro ao deletar transação');
+      console.error('Erro ao deletar transação:', e);
+      toast.error(ERROR_MESSAGE);
     }
   };
 
@@ -228,10 +226,8 @@ export function useContas() {
         auto_adicionado: false,
       }]).select().single();
 
-      if (error) {
-        console.error('Erro ao inserir saldo:', error);
-        throw error;
-      }
+      if (error) throw error;
+      
       if (inserido) {
         setTransacoes(prev => [{
           id: inserido.id,
@@ -244,7 +240,7 @@ export function useContas() {
       }
     } catch (e: any) {
       console.error('Erro ao adicionar saldo:', e);
-      toast.error(e.message || 'Erro ao adicionar saldo');
+      toast.error(ERROR_MESSAGE);
     }
   };
 
