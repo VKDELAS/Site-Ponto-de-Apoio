@@ -24,9 +24,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Trash2 } from "lucide-react"
+import { Loader2, Trash2, TrendingUp, TrendingDown, HandCoins } from "lucide-react"
 import { updateTransaction, deleteTransaction } from "@/lib/actions"
 import type { Transaction, TransactionType } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 type Props = {
   open: boolean
@@ -84,7 +85,7 @@ export function EditTransactionDialog({ open, onOpenChange, transaction, onSucce
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Transação</DialogTitle>
           <DialogDescription>
@@ -101,23 +102,43 @@ export function EditTransactionDialog({ open, onOpenChange, transaction, onSucce
             )}
 
             <div className="space-y-2">
-              <Label>Tipo</Label>
-              <div className="flex gap-2">
+              <Label>Tipo de Transação</Label>
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
-                  variant={type === "income" ? "default" : "outline"}
-                  className="flex-1"
+                  variant="outline"
+                  className={cn(
+                    "flex flex-col h-auto py-2 gap-1",
+                    type === "income" && "border-primary bg-primary/10 text-primary"
+                  )}
                   onClick={() => setType("income")}
                 >
-                  Receita
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-[10px]">Receita</span>
                 </Button>
                 <Button
                   type="button"
-                  variant={type === "expense" ? "default" : "outline"}
-                  className="flex-1"
+                  variant="outline"
+                  className={cn(
+                    "flex flex-col h-auto py-2 gap-1",
+                    type === "expense" && "border-red-500 bg-red-500/10 text-red-500"
+                  )}
                   onClick={() => setType("expense")}
                 >
-                  Despesa
+                  <TrendingDown className="h-4 w-4" />
+                  <span className="text-[10px]">Despesa</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "flex flex-col h-auto py-2 gap-1",
+                    type === "payment_received" && "border-yellow-500 bg-yellow-500/10 text-yellow-600"
+                  )}
+                  onClick={() => setType("payment_received")}
+                >
+                  <HandCoins className="h-4 w-4" />
+                  <span className="text-[10px]">Pagamento</span>
                 </Button>
               </div>
             </div>
@@ -163,7 +184,7 @@ export function EditTransactionDialog({ open, onOpenChange, transaction, onSucce
           <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" size="sm">
+                <Button type="button" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50/50">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Excluir
                 </Button>
@@ -177,7 +198,7 @@ export function EditTransactionDialog({ open, onOpenChange, transaction, onSucce
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                  <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-500 hover:bg-red-600">
                     {isDeleting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -195,7 +216,7 @@ export function EditTransactionDialog({ open, onOpenChange, transaction, onSucce
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Loader2, TrendingUp, TrendingDown, HandCoins } from "lucide-react"
 import { format } from "date-fns"
 import { addTransaction } from "@/lib/actions"
 import type { TransactionType } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 type Props = {
   open: boolean
@@ -62,11 +63,11 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Nova Transação</DialogTitle>
           <DialogDescription>
-            Adicione uma receita ou despesa
+            Adicione uma receita, despesa ou pagamento recebido.
           </DialogDescription>
         </DialogHeader>
 
@@ -79,23 +80,51 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: Props) {
             )}
 
             <div className="space-y-2">
-              <Label>Tipo</Label>
-              <div className="flex gap-2">
+              <Label>Tipo de Transação</Label>
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
-                  variant={type === "income" ? "default" : "outline"}
-                  className="flex-1"
-                  onClick={() => setType("income")}
+                  variant="outline"
+                  className={cn(
+                    "flex flex-col h-auto py-2 gap-1",
+                    type === "income" && "border-primary bg-primary/10 text-primary"
+                  )}
+                  onClick={() => {
+                    setType("income")
+                    if (!description) setDescription("Receita Extra")
+                  }}
                 >
-                  Receita
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-[10px]">Receita</span>
                 </Button>
                 <Button
                   type="button"
-                  variant={type === "expense" ? "default" : "outline"}
-                  className="flex-1"
-                  onClick={() => setType("expense")}
+                  variant="outline"
+                  className={cn(
+                    "flex flex-col h-auto py-2 gap-1",
+                    type === "expense" && "border-red-500 bg-red-500/10 text-red-500"
+                  )}
+                  onClick={() => {
+                    setType("expense")
+                  }}
                 >
-                  Despesa
+                  <TrendingDown className="h-4 w-4" />
+                  <span className="text-[10px]">Despesa</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "flex flex-col h-auto py-2 gap-1",
+                    type === "payment_received" && "border-yellow-500 bg-yellow-500/10 text-yellow-600"
+                  )}
+                  onClick={() => {
+                    setType("payment_received")
+                    if (!description) setDescription("Pagamento da Mãe")
+                  }}
+                >
+                  <HandCoins className="h-4 w-4" />
+                  <span className="text-[10px]">Pagamento</span>
                 </Button>
               </div>
             </div>
@@ -142,14 +171,14 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: Props) {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Salvando...
                 </>
               ) : (
-                "Salvar"
+                "Salvar Transação"
               )}
             </Button>
           </DialogFooter>

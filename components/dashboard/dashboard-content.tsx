@@ -41,19 +41,28 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
   const summary = useMemo(() => {
     const workedDaysCount = data.workedDays.length
     const totalEarnings = workedDaysCount * DAILY_RATE
+    
     const totalIncome = data.transactions
       .filter(t => t.type === "income")
       .reduce((acc, t) => acc + t.amount, 0)
+      
     const totalExpenses = data.transactions
       .filter(t => t.type === "expense")
       .reduce((acc, t) => acc + t.amount, 0)
-    const balance = totalEarnings + totalIncome - totalExpenses
+
+    const totalPaymentsReceived = data.transactions
+      .filter(t => t.type === "payment_received")
+      .reduce((acc, t) => acc + t.amount, 0)
+
+    // O saldo do mês é o que resta a receber (Ganhos + Outras Receitas - Despesas - O que já foi pago)
+    const balance = totalEarnings + totalIncome - totalExpenses - totalPaymentsReceived
 
     return {
       workedDays: workedDaysCount,
       totalEarnings,
       totalIncome,
       totalExpenses,
+      totalPaymentsReceived,
       balance,
     }
   }, [data])

@@ -16,8 +16,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Plus, 
-  DollarSign,
   LogOut,
+  User as UserIcon
 } from "lucide-react"
 
 type Props = {
@@ -62,59 +62,69 @@ export function DashboardHeader({
     router.refresh()
   }
 
-  const initials = user.email
-    ? user.email.substring(0, 2).toUpperCase()
-    : "U"
-
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-            <DollarSign className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-xl shadow-sm">
+            P
           </div>
-          <span className="hidden font-semibold sm:inline-block">
-            Controle Financeiro
-          </span>
+          <div className="hidden flex-col sm:flex">
+            <span className="text-sm font-black uppercase tracking-tighter leading-none">Ponto de</span>
+            <span className="text-sm font-black uppercase tracking-tighter leading-none">Apoio</span>
+          </div>
         </div>
 
         {/* Month Navigation */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+        <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handlePrevMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="min-w-[180px] text-center font-medium capitalize">
+          <span className="min-w-[120px] text-center text-xs font-bold uppercase tracking-widest px-2">
             {monthName}
           </span>
-          <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleNextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="gap-1" onClick={onAddTransaction}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Transação</span>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={onAddTransaction} 
+            className="hidden sm:flex bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onAddTransaction} 
+            className="sm:hidden h-10 w-10 rounded-xl border-primary text-primary"
+          >
+            <Plus className="h-5 w-5" />
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {initials}
+              <Button variant="ghost" className="relative h-10 w-10 rounded-xl p-0 overflow-hidden border bg-muted/30">
+                <Avatar className="h-10 w-10 rounded-none">
+                  <AvatarFallback className="bg-transparent">
+                    <UserIcon className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user.email}</p>
+                <p className="text-sm font-bold leading-none">Minha Conta</p>
+                <p className="text-xs leading-none text-muted-foreground mt-1">{user.email}</p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </DropdownMenuItem>
