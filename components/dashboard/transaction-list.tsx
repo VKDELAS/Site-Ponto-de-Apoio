@@ -1,1 +1,118 @@
-'''"use client"  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card" import { Button } from "@/components/ui/button" import { Plus, TrendingUp, TrendingDown, HandCoins, MoreVertical, Calendar } from "lucide-react" import { ScrollArea } from "@/components/ui/scroll-area" import { format } from "date-fns" import { ptBR } from "date-fns/locale" import type { Transaction } from "@/lib/types" import { cn } from "@/lib/utils"  type Props = {   transactions: Transaction[]   onEdit: (transaction: Transaction) => void   onAddNew: () => void }  export function TransactionList({ transactions, onEdit, onAddNew }: Props) {   const formatCurrency = (value: number) => {     return new Intl.NumberFormat("pt-BR", {       style: "currency",       currency: "BRL",     }).format(value)   }    const getTransactionIcon = (type: string) => {     switch (type) {       case "income":         return <TrendingUp className="h-4 w-4 text-green-500" />       case "payment_received":         return <HandCoins className="h-4 w-4 text-yellow-600" />       case "expense":         return <TrendingDown className="h-4 w-4 text-red-500" />       default:         return <TrendingUp className="h-4 w-4 text-primary" />     }   }    const getTransactionColor = (type: string) => {     switch (type) {       case "income":         return "text-green-500"       case "payment_received":         return "text-yellow-600"       case "expense":         return "text-red-500"       default:         return "text-primary"     }   }    const getTransactionBg = (type: string) => {     switch (type) {       case "income":         return "bg-green-500/10"       case "payment_received":         return "bg-yellow-500/10"       case "expense":         return "bg-red-500/10"       default:         return "bg-primary/10"     }   }    return (     <Card className="flex flex-col h-[450px] border-none shadow-sm">       <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">         <CardTitle className="text-lg font-bold">Transações</CardTitle>         <Button size="sm" onClick={onAddNew} className="h-8 px-2 bg-primary hover:bg-primary/90">           <Plus className="h-4 w-4 mr-1" />           Novo         </Button>       </CardHeader>       <CardContent className="flex-1 p-0">         <ScrollArea className="h-[370px] px-6 pb-6">           {transactions.length === 0 ? (             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">               <Calendar className="h-12 w-12 mb-4 opacity-20" />               <p className="text-sm font-medium">Nenhuma transação este mês</p>             </div>           ) : (             <div className="space-y-4">               {transactions                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())                 .map((transaction) => (                   <div                     key={transaction.id}                     className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group"                     onClick={() => onEdit(transaction)}                   >                     <div className="flex items-center gap-3">                       <div className={cn("p-2 rounded-full", getTransactionBg(transaction.type))}>                         {getTransactionIcon(transaction.type)}                       </div>                       <div>                         <p className="text-sm font-bold leading-none mb-1">                           {transaction.description || "Sem descrição"}                         </p>                         <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">                           {format(new Date(transaction.date), "dd 'de' MMM", { locale: ptBR })}                         </p>                       </div>                     </div>                     <div className="flex items-center gap-2">                       <div className={cn("text-sm font-bold", getTransactionColor(transaction.type))}>                         {transaction.type === "expense" ? "-" : "+"} {formatCurrency(transaction.amount)}                       </div>                       <MoreVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />                     </div>                   </div>                 ))}             </div>           )}         </ScrollArea>       </CardContent>     </Card>   ) } '''
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Plus, TrendingUp, TrendingDown, HandCoins, MoreVertical, Calendar } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import type { Transaction } from "@/lib/types"
+import { cn } from "@/lib/utils"
+
+type Props = {
+  transactions: Transaction[]
+  onEdit: (transaction: Transaction) => void
+  onAddNew: () => void
+}
+
+export function TransactionList({ transactions, onEdit, onAddNew }: Props) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value)
+  }
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case "income":
+        return <TrendingUp className="h-4 w-4 text-green-500" />
+      case "payment_received":
+        return <HandCoins className="h-4 w-4 text-yellow-600" />
+      case "expense":
+        return <TrendingDown className="h-4 w-4 text-red-500" />
+      default:
+        return <TrendingUp className="h-4 w-4 text-primary" />
+    }
+  }
+
+  const getTransactionColor = (type: string) => {
+    switch (type) {
+      case "income":
+        return "text-green-500"
+      case "payment_received":
+        return "text-yellow-600"
+      case "expense":
+        return "text-red-500"
+      default:
+        return "text-primary"
+    }
+  }
+
+  const getTransactionBg = (type: string) => {
+    switch (type) {
+      case "income":
+        return "bg-green-500/10"
+      case "payment_received":
+        return "bg-yellow-500/10"
+      case "expense":
+        return "bg-red-500/10"
+      default:
+        return "bg-primary/10"
+    }
+  }
+
+  return (
+    <Card className="flex flex-col h-[450px] border-none shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+        <CardTitle className="text-lg font-bold">Transações</CardTitle>
+        <Button size="sm" onClick={onAddNew} className="h-8 px-2 bg-primary hover:bg-primary/90">
+          <Plus className="h-4 w-4 mr-1" />
+          Novo
+        </Button>
+      </CardHeader>
+      <CardContent className="flex-1 p-0">
+        <ScrollArea className="h-[370px] px-6 pb-6">
+          {transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Calendar className="h-12 w-12 mb-4 opacity-20" />
+              <p className="text-sm font-medium">Nenhuma transação este mês</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {transactions
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group"
+                    onClick={() => onEdit(transaction)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn("p-2 rounded-full", getTransactionBg(transaction.type))}>
+                        {getTransactionIcon(transaction.type)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold leading-none mb-1">
+                          {transaction.description || "Sem descrição"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                          {format(new Date(transaction.date), "dd 'de' MMM", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={cn("text-sm font-bold", getTransactionColor(transaction.type))}>
+                        {transaction.type === "expense" ? "-" : "+"} {formatCurrency(transaction.amount)}
+                      </div>
+                      <MoreVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  )
+}
