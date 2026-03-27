@@ -67,7 +67,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: Props) {
         <DialogHeader>
           <DialogTitle>Nova Transação</DialogTitle>
           <DialogDescription>
-            Adicione uma receita, despesa ou pagamento recebido.
+            Adicione uma entrada, despesa ou pagamento recebido.
           </DialogDescription>
         </DialogHeader>
 
@@ -91,11 +91,11 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: Props) {
                   )}
                   onClick={() => {
                     setType("income")
-                    if (!description) setDescription("Receita Extra")
+                    if (!description) setDescription("Entrada Extra")
                   }}
                 >
                   <TrendingUp className="h-4 w-4" />
-                  <span className="text-[10px]">Receita</span>
+                  <span className="text-[10px]">Entrada</span>
                 </Button>
                 <Button
                   type="button"

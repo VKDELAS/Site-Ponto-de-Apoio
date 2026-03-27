@@ -54,7 +54,7 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
       .filter(t => t.type === "payment_received")
       .reduce((acc, t) => acc + t.amount, 0)
 
-    // O saldo do mês é o que resta a receber (Ganhos + Outras Receitas - Despesas - O que já foi pago)
+    // O saldo do mês é o que resta a receber (Ganhos + Outras Entradas - Despesas - O que já foi pago)
     const balance = totalEarnings + totalIncome - totalExpenses - totalPaymentsReceived
 
     return {

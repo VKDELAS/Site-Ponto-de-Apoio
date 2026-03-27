@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
@@ -40,7 +41,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row items-center justify-center bg-[#f0f2f5] dark:bg-background p-6 md:p-12">
+    <div className="flex min-h-screen flex-col lg:flex-row items-center justify-center bg-[#f0f2f5] dark:bg-background p-6 md:p-12 overflow-hidden">
       {/* Lado Esquerdo - Branding */}
       <div className="flex flex-col items-center lg:items-start lg:mr-12 mb-8 lg:mb-0 max-w-[500px] text-center lg:text-left">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-black text-4xl shadow-md mb-4">
@@ -54,108 +55,187 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Lado Direito - Formulário */}
-      <div className="w-full max-w-[400px]">
-        <Card className="border-none shadow-xl rounded-xl overflow-hidden bg-white dark:bg-card">
-          <CardContent className="p-6 md:p-8">
-            <form onSubmit={handleLogin} className="space-y-6">
-              {error && (
-                <Alert variant="destructive" className="rounded-lg">
-                  <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              {/* Floating Label - Email */}
-              <div className="relative">
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(email === "")}
-                  required
-                  className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
-                  placeholder="E-mail"
-                />
-                <label
-                  htmlFor="email"
-                  className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
-                    emailFocused || email
-                      ? "top-2 text-xs text-primary"
-                      : "top-3.5 text-base text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  E-mail
-                </label>
-              </div>
+      {/* Lado Direito - Formulário com Animação Estilo Facebook */}
+      <div className="w-full max-w-[400px] relative h-[550px]">
+        {/* Container de Animação */}
+        <div className="relative w-full h-full">
+          {/* Slide de Login */}
+          <div
+            className={`absolute w-full h-full transition-all duration-500 ease-in-out ${
+              isSignUp ? "translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"
+            }`}
+          >
+            <Card className="border-none shadow-xl rounded-xl overflow-hidden bg-white dark:bg-card h-full">
+              <CardContent className="p-6 md:p-8 h-full flex flex-col justify-between">
+                <form onSubmit={handleLogin} className="space-y-6">
+                  {error && (
+                    <Alert variant="destructive" className="rounded-lg">
+                      <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Floating Label - Email */}
+                  <div className="relative">
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(email === "")}
+                      required
+                      className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                      placeholder="E-mail"
+                    />
+                    <label
+                      htmlFor="email"
+                      className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                        emailFocused || email
+                          ? "top-2 text-xs text-primary"
+                          : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      E-mail
+                    </label>
+                  </div>
 
-              {/* Floating Label - Senha */}
-              <div className="relative">
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(password === "")}
-                  required
-                  className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
-                  placeholder="Senha"
-                />
-                <label
-                  htmlFor="password"
-                  className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
-                    passwordFocused || password
-                      ? "top-2 text-xs text-primary"
-                      : "top-3.5 text-base text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  Senha
-                </label>
-              </div>
+                  {/* Floating Label - Senha */}
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(password === "")}
+                      required
+                      className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                      placeholder="Senha"
+                    />
+                    <label
+                      htmlFor="password"
+                      className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                        passwordFocused || password
+                          ? "top-2 text-xs text-primary"
+                          : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      Senha
+                    </label>
+                  </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm transition-all active:scale-[0.98] hover:shadow-md" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  "Entrar"
-                )}
-              </Button>
-
-              <div className="text-center">
-                <Link href="#" className="text-sm font-medium text-primary hover:underline">
-                  Esqueceu a senha?
-                </Link>
-              </div>
-
-              <div className="border-t border-gray-100 dark:border-gray-700 my-6"></div>
-
-              <div className="text-center">
-                <Link href="/auth/sign-up">
                   <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="h-12 px-8 text-base font-bold border-2 border-secondary hover:bg-secondary hover:text-secondary-foreground rounded-lg transition-colors"
+                    type="submit" 
+                    className="w-full h-12 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm transition-all active:scale-[0.98] hover:shadow-md" 
+                    disabled={isLoading}
                   >
-                    Criar nova conta
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Entrando...
+                      </>
+                    ) : (
+                      "Entrar"
+                    )}
                   </Button>
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-        
-        <p className="text-center mt-6 text-sm text-muted-foreground">
-          <b>Ponto de Apoio</b> ajuda você a gerenciar seus ganhos e despesas com facilidade.
-        </p>
+
+                  <div className="text-center">
+                    <Link href="#" className="text-sm font-medium text-primary hover:underline">
+                      Esqueceu a senha?
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-gray-100 dark:border-gray-700 my-6"></div>
+
+                  <div className="text-center">
+                    <Button 
+                      type="button" 
+                      onClick={() => setIsSignUp(true)}
+                      className="h-12 px-8 text-base font-bold border-2 border-secondary bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Criar nova conta
+                    </Button>
+                  </div>
+                </form>
+                
+                <p className="text-center text-sm text-muted-foreground">
+                  <b>Ponto de Apoio</b> ajuda você a gerenciar seus ganhos e despesas com facilidade.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Slide de Cadastro */}
+          <div
+            className={`absolute w-full h-full transition-all duration-500 ease-in-out ${
+              isSignUp ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"
+            }`}
+          >
+            <Card className="border-none shadow-xl rounded-xl overflow-hidden bg-white dark:bg-card h-full">
+              <CardContent className="p-6 md:p-8 h-full flex flex-col justify-between">
+                <form className="space-y-6">
+                  <h2 className="text-2xl font-black text-primary mb-4">Criar conta</h2>
+                  
+                  {/* Floating Label - Email */}
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                      placeholder="E-mail"
+                    />
+                    <label
+                      className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                        email
+                          ? "top-2 text-xs text-primary"
+                          : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      E-mail
+                    </label>
+                  </div>
+
+                  {/* Floating Label - Senha */}
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                      placeholder="Senha"
+                    />
+                    <label
+                      className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                        password
+                          ? "top-2 text-xs text-primary"
+                          : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      Senha (mínimo 6 caracteres)
+                    </label>
+                  </div>
+
+                  <div className="border-t border-gray-100 dark:border-gray-700 my-4"></div>
+
+                  <Button 
+                    type="button"
+                    onClick={() => setIsSignUp(false)}
+                    className="h-12 px-8 text-base font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md w-full"
+                  >
+                    Voltar para Login
+                  </Button>
+                </form>
+                
+                <p className="text-center text-sm text-muted-foreground">
+                  Comece a controlar suas finanças agora
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

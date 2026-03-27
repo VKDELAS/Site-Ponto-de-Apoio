@@ -114,7 +114,7 @@ export function EditTransactionDialog({ open, onOpenChange, transaction, onSucce
                   onClick={() => setType("income")}
                 >
                   <TrendingUp className="h-4 w-4" />
-                  <span className="text-[10px]">Receita</span>
+                  <span className="text-[10px]">Entrada</span>
                 </Button>
                 <Button
                   type="button"
