@@ -27,7 +27,7 @@ export function useContas() {
       const { data: transacoesData, error: transacoesError } = await supabase
         .from('transacoes')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('userid', user.id)
         .order('data', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -94,7 +94,7 @@ export function useContas() {
         const { data: inserido, error } = await supabase
           .from('transacoes')
           .insert([{
-            user_id: user.id,
+            userid: user.id,
             tipo: 'ganho',
             valor: VALOR_DIARIO,
             data: data,
@@ -133,7 +133,7 @@ export function useContas() {
     }
     try {
       const { data: inserido, error } = await supabase.from('transacoes').insert([{
-        user_id: user.id,
+        userid: user.id,
         tipo: 'pagamento',
         valor,
         data,
@@ -167,7 +167,7 @@ export function useContas() {
     }
     try {
       const { data: inserido, error } = await supabase.from('transacoes').insert([{
-        user_id: user.id,
+        userid: user.id,
         tipo: 'gasto',
         valor,
         data,
@@ -220,7 +220,7 @@ export function useContas() {
 
     try {
       const { data: inserido, error } = await supabase.from('transacoes').insert([{
-        user_id: user.id,
+        userid: user.id,
         tipo: 'ganho',
         valor,
         data: hoje,

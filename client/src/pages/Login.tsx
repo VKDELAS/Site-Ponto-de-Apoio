@@ -89,21 +89,20 @@ export default function Login() {
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         }
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Erro Google OAuth:', error);
+        throw error;
+      }
     } catch (error: any) {
-      console.error('Erro Google OAuth:', error);
+      console.error('Erro Google OAuth completo:', error);
       let mensagem = error.message || 'Erro ao conectar com Google';
       
       if (mensagem.includes('placeholder.supabase.co') || mensagem.includes('Failed to fetch')) {
-        mensagem = 'Erro de conexão: O Supabase não está configurado corretamente. Verifique seu arquivo .env';
+        mensagem = 'Erro de conexao: O Supabase nao esta configurado corretamente. Verifique seu arquivo .env';
       } else if (mensagem.includes('validation_failed') || mensagem.includes('Unsupported provider')) {
-        mensagem = 'Google não está habilitado no seu projeto Supabase. Acesse: Supabase Dashboard > Authentication > Providers > Google e ative-o.';
+        mensagem = 'Google nao esta habilitado. Va em: Supabase Dashboard > Authentication > Providers > Google, desative e ative novamente, depois clique em SAVE.';
       }
       
       toast.error(mensagem);
