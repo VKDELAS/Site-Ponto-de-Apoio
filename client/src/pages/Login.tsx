@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FloatingLabelInput } from '@/components/FloatingLabelInput';
 import { toast } from 'sonner';
-import { User, Lock, Mail, Chrome } from 'lucide-react';
+import { User, Lock, Mail, Chrome, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Login() {
@@ -234,13 +234,7 @@ export default function Login() {
                 className="w-full bg-[#FFD700] text-black h-14 font-black uppercase tracking-widest rounded-xl shadow-lg hover:shadow-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 mt-6"
               >
                 {carregando ? (
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="inline-block"
-                  >
-                    ⏳
-                  </motion.span>
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                 ) : (
                   modo === 'login' ? 'Entrar' : 'Criar Conta'
                 )}

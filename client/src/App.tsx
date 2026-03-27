@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import { Spinner } from "./components/ui/spinner";
 
 function Router() {
   const { user, loading } = useAuth();
@@ -15,8 +16,8 @@ function Router() {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin mb-4 text-4xl text-accent">⏳</div>
-          <p className="text-lg font-black uppercase tracking-widest text-accent">PONTO DE APOIO</p>
+          <Spinner className="size-12 mb-4 text-primary mx-auto" />
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Carregando Sistema</p>
         </div>
       </div>
     );

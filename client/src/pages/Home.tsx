@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Calendar as CalendarIcon, ChevronDown, ChevronRight, LogOut } from 'lucide-react';
+import { Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Calendar as CalendarIcon, ChevronDown, ChevronRight, LogOut, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContas } from '@/hooks/useContas';
 import { toast } from 'sonner';
@@ -144,13 +144,7 @@ export default function Home() {
             transition={{ duration: 2, repeat: Infinity }}
             className="inline-flex items-center justify-center w-20 h-20 bg-[#FFD700] rounded-2xl mb-6 shadow-[0_0_30px_rgba(255,215,0,0.3)]"
           >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="w-10 h-10 text-black font-black text-2xl"
-            >
-              ⏳
-            </motion.div>
+            <Loader2 className="w-10 h-10 text-black animate-spin" />
           </motion.div>
           <motion.p 
             animate={{ opacity: [0.5, 1, 0.5] }}
