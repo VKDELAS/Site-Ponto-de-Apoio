@@ -1,28 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { Loader2, ArrowLeft } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
+  const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
+
+  // Carregar dados salvos se "Lembrar de mim" estiver ativo
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("remembered_email")
+    if (savedEmail) {
+      setEmail(savedEmail)
+      setRememberMe(true)
+    }
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+
+    if (rememberMe) {
+      localStorage.setItem("remembered_email", email)
+    } else {
+      localStorage.removeItem("remembered_email")
+    }
 
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({
@@ -36,6 +56,60 @@ export default function LoginPage() {
       return
     }
 
+    router.push("/dashboard")
+    router.refresh()
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    // Validações
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem")
+      setIsLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres")
+      setIsLoading(false)
+      return
+    }
+
+    const supabase = createClient()
+    
+    // Registrar o usuário
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo:
+          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+          `${window.location.origin}/dashboard`,
+      },
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setIsLoading(false)
+      return
+    }
+
+    // Fazer login automático após o registro
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (loginError) {
+      setError("Conta criada com sucesso, mas houve um erro ao fazer login. Por favor, tente fazer login manualmente.")
+      setIsLoading(false)
+      return
+    }
+
+    // Redirecionar para o dashboard
     router.push("/dashboard")
     router.refresh()
   }
@@ -56,18 +130,18 @@ export default function LoginPage() {
       </div>
 
       {/* Lado Direito - Formulário com Animação Estilo Facebook */}
-      <div className="w-full max-w-[400px] relative h-[550px]">
+      <div className="w-full max-w-[400px] relative h-[600px]">
         {/* Container de Animação */}
         <div className="relative w-full h-full">
           {/* Slide de Login */}
           <div
             className={`absolute w-full h-full transition-all duration-500 ease-in-out ${
-              isSignUp ? "translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"
+              isSignUp ? "-translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"
             }`}
           >
             <Card className="border-none shadow-xl rounded-xl overflow-hidden bg-white dark:bg-card h-full">
               <CardContent className="p-6 md:p-8 h-full flex flex-col justify-between">
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-5">
                   {error && (
                     <Alert variant="destructive" className="rounded-lg">
                       <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
@@ -124,6 +198,19 @@ export default function LoginPage() {
                     </label>
                   </div>
 
+                  {/* Lembrar de mim */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="remember" 
+                      checked={rememberMe} 
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      className="border-gray-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <Label htmlFor="remember" className="text-sm font-medium text-muted-foreground cursor-pointer">
+                      Lembrar de mim
+                    </Label>
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full h-12 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm transition-all active:scale-[0.98] hover:shadow-md" 
@@ -145,12 +232,15 @@ export default function LoginPage() {
                     </Link>
                   </div>
 
-                  <div className="border-t border-gray-100 dark:border-gray-700 my-6"></div>
+                  <div className="border-t border-gray-100 dark:border-gray-700 my-4"></div>
 
                   <div className="text-center">
                     <Button 
                       type="button" 
-                      onClick={() => setIsSignUp(true)}
+                      onClick={() => {
+                        setIsSignUp(true)
+                        setError(null)
+                      }}
                       className="h-12 px-8 text-base font-bold border-2 border-secondary bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                     >
                       Criar nova conta
@@ -158,7 +248,7 @@ export default function LoginPage() {
                   </div>
                 </form>
                 
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-sm text-muted-foreground mt-4">
                   <b>Ponto de Apoio</b> ajuda você a gerenciar seus ganhos e despesas com facilidade.
                 </p>
               </CardContent>
@@ -168,14 +258,36 @@ export default function LoginPage() {
           {/* Slide de Cadastro */}
           <div
             className={`absolute w-full h-full transition-all duration-500 ease-in-out ${
-              isSignUp ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"
+              isSignUp ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
             }`}
           >
             <Card className="border-none shadow-xl rounded-xl overflow-hidden bg-white dark:bg-card h-full">
-              <CardContent className="p-6 md:p-8 h-full flex flex-col justify-between">
-                <form className="space-y-6">
-                  <h2 className="text-2xl font-black text-primary mb-4">Criar conta</h2>
-                  
+              <CardContent className="p-6 md:p-8 h-full flex flex-col">
+                <div className="flex items-center mb-6">
+                  <button 
+                    onClick={() => {
+                      setIsSignUp(false)
+                      setError(null)
+                      setConfirmPassword("")
+                    }}
+                    className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-muted-foreground"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <h2 className="text-2xl font-black text-primary ml-2">Criar conta</h2>
+                </div>
+                
+                <form onSubmit={handleSignUp} className="space-y-5 flex-1">
+                  {error && (
+                    <Alert variant="destructive" className="rounded-lg">
+                      <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <p className="text-sm text-muted-foreground">
+                    É rápido e fácil. Comece a controlar suas finanças agora mesmo.
+                  </p>
+
                   {/* Floating Label - Email */}
                   <div className="relative">
                     <input
@@ -203,13 +315,15 @@ export default function LoginPage() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(password === "")}
                       required
                       className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
                       placeholder="Senha"
                     />
                     <label
                       className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
-                        password
+                        passwordFocused || password
                           ? "top-2 text-xs text-primary"
                           : "top-3.5 text-base text-gray-500 dark:text-gray-400"
                       }`}
@@ -218,20 +332,50 @@ export default function LoginPage() {
                     </label>
                   </div>
 
-                  <div className="border-t border-gray-100 dark:border-gray-700 my-4"></div>
+                  {/* Floating Label - Confirmar Senha */}
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onFocus={() => setConfirmPasswordFocused(true)}
+                      onBlur={() => setConfirmPasswordFocused(confirmPassword === "")}
+                      required
+                      className="peer w-full h-12 px-4 pt-6 pb-2 text-base border border-gray-300 rounded-lg bg-white dark:bg-card dark:border-gray-600 dark:text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder-transparent"
+                      placeholder="Confirmar Senha"
+                    />
+                    <label
+                      className={`absolute left-4 transition-all duration-200 pointer-events-none font-medium ${
+                        confirmPasswordFocused || confirmPassword
+                          ? "top-2 text-xs text-primary"
+                          : "top-3.5 text-base text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      Confirmar Senha
+                    </label>
+                  </div>
 
                   <Button 
-                    type="button"
-                    onClick={() => setIsSignUp(false)}
-                    className="h-12 px-8 text-base font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md w-full"
+                    type="submit"
+                    className="w-full h-12 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm transition-all active:scale-[0.98] hover:shadow-md mt-4"
+                    disabled={isLoading}
                   >
-                    Voltar para Login
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Criando conta...
+                      </>
+                    ) : (
+                      "Registrar"
+                    )}
                   </Button>
                 </form>
                 
-                <p className="text-center text-sm text-muted-foreground">
-                  Comece a controlar suas finanças agora
-                </p>
+                <div className="mt-auto pt-6 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Ao clicar em Registrar, você concorda com nossos Termos e Política de Dados.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
