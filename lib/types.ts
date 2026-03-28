@@ -7,7 +7,7 @@ export type WorkedDay = {
   created_at: string
 }
 
-export type TransactionType = "income" | "expense" | "daily_work"
+export type TransactionType = "income" | "expense" | "daily_work" | "payment_received" | "automatic_daily"
 
 export type Transaction = {
   id: string

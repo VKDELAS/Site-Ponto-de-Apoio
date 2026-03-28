@@ -62,6 +62,7 @@ export function WorkCalendar({ year, month, workedDays, onRefresh }: Props) {
       if (result.action === "added") {
         toast.success(`Dia marcado! +R$${DAILY_RATE}`)
       } else {
+        // Desmarque manual: remove o dia trabalhado e o crédito de R$50
         toast.success(`Dia desmarcado! -R$${DAILY_RATE}`)
       }
       

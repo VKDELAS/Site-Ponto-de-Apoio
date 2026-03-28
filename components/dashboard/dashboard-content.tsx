@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import type { User } from "@supabase/supabase-js"
 import type { MonthData, Transaction } from "@/lib/types"
 import { DAILY_RATE } from "@/lib/types"
+import { toast } from "sonner"
 import { DashboardHeader } from "./dashboard-header"
 import { FinancialSummary } from "./financial-summary"
 import { WorkCalendar } from "./work-calendar"
@@ -31,11 +32,42 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
   // Sync data when initialData changes (after router.refresh())
   useEffect(() => {
     setData(initialData)
-  }, [initialData])
+  }, [initialData, router])
   
   // Dialog states
   const [addTransactionOpen, setAddTransactionOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+
+  // Apply automatic daily credit on mount
+  useEffect(() => {
+    async function applyAutomaticCredit() {
+      try {
+        const response = await fetch("/api/automatic-daily", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          console.error("[Dashboard] Automatic credit error:", error)
+          return
+        }
+
+        const result = await response.json()
+        console.log("[Dashboard] Automatic credit result:", result)
+
+        // Se foi creditado, fazer refresh dos dados
+        if (result.action === "credited") {
+          toast.success(result.message)
+          router.refresh()
+        }
+      } catch (error) {
+        console.error("[Dashboard] Error applying automatic credit:", error)
+      }
+    }
+
+    applyAutomaticCredit()
+  }, [])
 
   // Calculate summaries
   const summary = useMemo(() => {
