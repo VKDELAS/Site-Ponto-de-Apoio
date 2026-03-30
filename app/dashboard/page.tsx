@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardContent } from "@/components/dashboard/dashboard-content"
 import type { WorkedDay, Transaction } from "@/lib/types"
 import { startOfMonth, endOfMonth, format } from "date-fns"
+import { applyAutomaticDailyCredit } from "@/lib/automatic-daily"
 
 async function getMonthData(userId: string, year: number, month: number) {
   const supabase = await createClient()
@@ -49,6 +50,9 @@ export default async function DashboardPage({
   const now = new Date()
   const year = params.year ? parseInt(params.year) : now.getFullYear()
   const month = params.month ? parseInt(params.month) : now.getMonth()
+
+  // Aplicar crédito automático antes de buscar os dados
+  await applyAutomaticDailyCredit(user.id)
 
   const monthData = await getMonthData(user.id, year, month)
 

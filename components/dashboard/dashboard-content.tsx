@@ -15,6 +15,7 @@ import { AddTransactionDialog } from "./add-transaction-dialog"
 import { EditTransactionDialog } from "./edit-transaction-dialog"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useAutomaticDaily } from "@/hooks/use-automatic-daily"
 
 type Props = {
   user: User
@@ -38,34 +39,36 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
   const [addTransactionOpen, setAddTransactionOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
-  // Apply automatic daily credit on mount
-  useEffect(() => {
-    async function applyAutomaticCredit() {
-      try {
-        const response = await fetch("/api/automatic-daily", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        })
+  // Apply automatic daily credit on mount and when date changes
+  const applyAutomaticCredit = async () => {
+    try {
+      const response = await fetch("/api/automatic-daily", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
 
-        if (!response.ok) {
-          const error = await response.json()
-          console.error("[Dashboard] Automatic credit error:", error)
-          return
-        }
-
-        const result = await response.json()
-        console.log("[Dashboard] Automatic credit result:", result)
-
-        // Se foi creditado, fazer refresh dos dados
-        if (result.action === "credited") {
-          toast.success(result.message)
-          router.refresh()
-        }
-      } catch (error) {
-        console.error("[Dashboard] Error applying automatic credit:", error)
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("[Dashboard] Automatic credit error:", error)
+        return
       }
-    }
 
+      const result = await response.json()
+      console.log("[Dashboard] Automatic credit result:", result)
+
+      // Se foi creditado, fazer refresh dos dados
+      if (result.action === "credited") {
+        toast.success(result.message)
+        router.refresh()
+      }
+    } catch (error) {
+      console.error("[Dashboard] Error applying automatic credit:", error)
+    }
+  }
+
+  useAutomaticDaily(applyAutomaticCredit)
+
+  useEffect(() => {
     applyAutomaticCredit()
   }, [])
 
