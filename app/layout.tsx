@@ -11,23 +11,20 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Controle Financeiro',
   description: 'Sistema de controle financeiro para freelancers e autônomos',
-  generator: 'v0.app',
+  generator: 'Enzzo Pontes Baraldo',
   icons: {
     icon: [
       {
-        url: '/public/favicon.png',
+        url: '/favicon.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/public/favicon.png',
+        url: '/favicon.png',
         media: '(prefers-color-scheme: dark)',
       },
-      {
-        url: '/public/favicon.png',
-        type: 'image/svg+xml',
-      },
+
     ],
-    apple: '/public/favicon.png',
+    apple: '/favicon.png',
   },
 }
 

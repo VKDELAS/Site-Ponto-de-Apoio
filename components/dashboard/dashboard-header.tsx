@@ -19,6 +19,7 @@ import {
   LogOut,
   User as UserIcon
 } from "lucide-react"
+import Image from "next/image"
 
 type Props = {
   user: User
@@ -67,8 +68,14 @@ export function DashboardHeader({
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-xl shadow-sm">
-            P
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary overflow-hidden shadow-sm">
+            <Image 
+              src="/favicon.png" 
+              alt="Logo" 
+              width={40} 
+              height={40} 
+              className="object-cover"
+            />
           </div>
           <div className="hidden flex-col sm:flex">
             <span className="text-sm font-black uppercase tracking-tighter leading-none">Ponto de</span>
