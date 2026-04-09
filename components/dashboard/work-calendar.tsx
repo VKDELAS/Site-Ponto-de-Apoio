@@ -2,7 +2,6 @@
 
 import { useMemo, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { 
   startOfMonth, 
@@ -15,21 +14,18 @@ import {
   isToday,
   isFuture,
 } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import type { WorkedDay } from "@/lib/types"
 import { DAILY_RATE } from "@/lib/types"
 import { CalendarDays, Loader2 } from "lucide-react"
-import { toggleWorkedDay } from "@/lib/actions"
-import { toast } from "sonner"
 
 type Props = {
   year: number
   month: number
   workedDays: WorkedDay[]
-  onRefresh: () => void
+  onToggle: (dateStr: string) => Promise<void>
 }
 
-export function WorkCalendar({ year, month, workedDays, onRefresh }: Props) {
+export function WorkCalendar({ year, month, workedDays, onToggle }: Props) {
   const [isPending, startTransition] = useTransition()
   const monthDate = new Date(year, month)
   
@@ -47,26 +43,9 @@ export function WorkCalendar({ year, month, workedDays, onRefresh }: Props) {
 
   async function handleDayClick(date: Date) {
     const dateStr = format(date, "yyyy-MM-dd")
-    console.log("[v0] Calendar day clicked:", dateStr)
     
     startTransition(async () => {
-      console.log("[v0] Calling toggleWorkedDay...")
-      const result = await toggleWorkedDay(dateStr)
-      console.log("[v0] toggleWorkedDay result:", result)
-      
-      if (result.error) {
-        toast.error(result.error)
-        return
-      }
-
-      if (result.action === "added") {
-        toast.success(`Dia marcado! +R$${DAILY_RATE}`)
-      } else {
-        // Desmarque manual: remove o dia trabalhado e o crédito de R$50
-        toast.success(`Dia desmarcado! -R$${DAILY_RATE}`)
-      }
-      
-      onRefresh()
+      await onToggle(dateStr)
     })
   }
 

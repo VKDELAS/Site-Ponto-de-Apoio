@@ -17,6 +17,9 @@ export async function applyAutomaticDailyCredit(userId: string, options?: { incl
   try {
     if (includeBackfill) {
       // Modo Recuperação: Buscar o último dia creditado
+      // IMPORTANTE: Buscamos o último dia que FOI marcado, mas o backfill só deve agir se o usuário
+      // nunca teve esse dia marcado. Se ele desmarcou manualmente, haverá um log de "delete".
+      
       const { data: lastCreditedDay, error: lastDayError } = await supabase
         .from("worked_days")
         .select("date")
@@ -86,6 +89,23 @@ async function markSingleDay(userId: string, dateStr: string) {
       return { success: true, action: "already_marked" }
     }
 
+    // NOVO: Verificar se o usuário desmarcou esse dia manualmente hoje
+    // Isso evita que o crédito automático recrie um dia que o usuário acabou de deletar
+    const { data: deleteLog } = await supabase
+      .from("action_logs")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("action_type", "delete")
+      .ilike("description", `%${dateStr}%`)
+      .gte("created_at", format(new Date(), "yyyy-MM-dd"))
+      .limit(1)
+      .single()
+
+    if (deleteLog) {
+      console.log(`[automatic-daily] Day ${dateStr} was manually deleted today, skipping auto-mark`)
+      return { success: true, action: "skipped_manual_delete" }
+    }
+
     // Verificar se já existe transação automática
     const { data: existingTransaction, error: txError } = await supabase
       .from("transactions")
@@ -97,7 +117,7 @@ async function markSingleDay(userId: string, dateStr: string) {
 
     if (txError && txError.code !== "PGRST116") {
       console.error("[automatic-daily] Error checking existing transaction:", txError)
-      return { error: txError.message }
+      return { error: checkError?.message }
     }
 
     if (existingTransaction) {
@@ -193,10 +213,25 @@ async function backfillMissingDays(
     }
 
     const alreadyMarkedSet = new Set((alreadyMarked || []).map(d => d.date))
-    const daysToInsert = daysToMark.filter(d => !alreadyMarkedSet.has(d))
+    
+    // NOVO: Verificar logs de deleção para esses dias para não re-marcar o que foi deletado
+    const { data: deleteLogs } = await supabase
+      .from("action_logs")
+      .select("description")
+      .eq("user_id", userId)
+      .eq("action_type", "delete")
+      .filter("description", "ilike", "%trabalhado%")
+
+    const deletedDaysSet = new Set()
+    deleteLogs?.forEach(log => {
+      const match = log.description?.match(/\d{4}-\d{2}-\d{2}/)
+      if (match) deletedDaysSet.add(match[0])
+    })
+
+    const daysToInsert = daysToMark.filter(d => !alreadyMarkedSet.has(d) && !deletedDaysSet.has(d))
 
     if (daysToInsert.length === 0) {
-      console.log("[automatic-daily] All days already marked")
+      console.log("[automatic-daily] All days already marked or manually deleted")
       return { success: true, action: "already_credited", daysMarked: 0 }
     }
 

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { User } from "@supabase/supabase-js"
-import type { MonthData, Transaction } from "@/lib/types"
+import type { MonthData, Transaction, WorkedDay } from "@/lib/types"
 import { DAILY_RATE } from "@/lib/types"
 import { toast } from "sonner"
 import { DashboardHeader } from "./dashboard-header"
@@ -16,6 +16,7 @@ import { EditTransactionDialog } from "./edit-transaction-dialog"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAutomaticDaily } from "@/hooks/use-automatic-daily"
+import { toggleWorkedDay } from "@/lib/actions"
 
 type Props = {
   user: User
@@ -33,7 +34,7 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
   // Sync data when initialData changes (after router.refresh())
   useEffect(() => {
     setData(initialData)
-  }, [initialData, router])
+  }, [initialData])
   
   // Dialog states
   const [addTransactionOpen, setAddTransactionOpen] = useState(false)
@@ -135,6 +136,29 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
     router.refresh()
   }
 
+  // Optimized toggle with local state update
+  async function handleToggleWorkedDay(dateStr: string) {
+    // Optimistic update
+    const isRemoving = data.workedDays.some(d => d.date === dateStr)
+    
+    // Call server action
+    const result = await toggleWorkedDay(dateStr)
+    
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+
+    if (result.action === "added") {
+      toast.success(`Dia marcado! +R$${DAILY_RATE}`)
+    } else {
+      toast.success(`Dia desmarcado! -R$${DAILY_RATE}`)
+    }
+
+    // Trigger server refresh to get consistent data
+    router.refresh()
+  }
+
   const monthName = format(new Date(year, month), "MMMM 'de' yyyy", { locale: ptBR })
 
   return (
@@ -158,7 +182,7 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
               year={year}
               month={month}
               workedDays={data.workedDays}
-              onRefresh={refreshData}
+              onToggle={handleToggleWorkedDay}
             />
           </div>
 
