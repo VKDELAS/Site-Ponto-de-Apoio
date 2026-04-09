@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CalendarDays, DollarSign, TrendingUp, TrendingDown, Wallet, HandCoins } from "lucide-react"
+import { CalendarDays, DollarSign, TrendingUp, TrendingDown, Wallet, HandCoins, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DAILY_RATE } from "@/lib/types"
 
@@ -12,7 +12,8 @@ type Props = {
     totalIncome: number
     totalExpenses: number
     totalPaymentsReceived?: number
-    balance: number
+    monthBalance: number
+    totalBalance: number
   }
 }
 
@@ -26,12 +27,21 @@ export function FinancialSummary({ summary }: Props) {
 
   const cards = [
     {
-      title: "Dias Trabalhados",
-      value: summary.workedDays.toString(),
-      subtitle: `R$${DAILY_RATE}/dia`,
-      icon: CalendarDays,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
+      title: "Saldo Total Acumulado",
+      value: formatCurrency(summary.totalBalance),
+      subtitle: "Todos os meses",
+      icon: Landmark,
+      color: summary.totalBalance >= 0 ? "text-primary" : "text-red-500",
+      bgColor: summary.totalBalance >= 0 ? "bg-primary/10" : "bg-red-500/10",
+      className: "sm:col-span-2 lg:col-span-1",
+    },
+    {
+      title: "Saldo do Mês",
+      value: formatCurrency(summary.monthBalance),
+      subtitle: "Mês visualizado",
+      icon: Wallet,
+      color: summary.monthBalance >= 0 ? "text-primary" : "text-red-500",
+      bgColor: summary.monthBalance >= 0 ? "bg-primary/10" : "bg-red-500/10",
     },
     {
       title: "Ganhos (Trabalho)",
@@ -57,20 +67,12 @@ export function FinancialSummary({ summary }: Props) {
       color: "text-red-500",
       bgColor: "bg-red-500/10",
     },
-    {
-      title: "A Receber",
-      value: formatCurrency(summary.balance),
-      subtitle: summary.balance >= 0 ? "Saldo restante" : "Saldo devedor",
-      icon: Wallet,
-      color: summary.balance >= 0 ? "text-primary" : "text-red-500",
-      bgColor: summary.balance >= 0 ? "bg-primary/10" : "bg-red-500/10",
-    },
   ]
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {cards.map((card) => (
-        <Card key={card.title} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+        <Card key={card.title} className={cn("border-none shadow-sm overflow-hidden group hover:shadow-md transition-shadow", card.className)}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {card.title}

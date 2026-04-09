@@ -74,6 +74,7 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
 
   // Calculate summaries
   const summary = useMemo(() => {
+    // 1. Cálculos do Mês Atual
     const workedDaysCount = data.workedDays.length
     const totalEarnings = workedDaysCount * DAILY_RATE
     
@@ -90,7 +91,26 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
       .reduce((acc, t) => acc + t.amount, 0)
 
     // O saldo do mês é o que resta a receber (Ganhos + Outras Entradas - Despesas - O que já foi pago)
-    const balance = totalEarnings + totalIncome - totalExpenses - totalPaymentsReceived
+    const monthBalance = totalEarnings + totalIncome - totalExpenses - totalPaymentsReceived
+
+    // 2. Cálculos Totais Acumulados
+    const allWorkedDaysCount = data.allWorkedDays.length
+    const allTotalEarnings = allWorkedDaysCount * DAILY_RATE
+
+    const allTotalIncome = data.allTransactions
+      .filter(t => t.type === "income")
+      .reduce((acc, t) => acc + t.amount, 0)
+
+    const allTotalExpenses = data.allTransactions
+      .filter(t => t.type === "expense")
+      .reduce((acc, t) => acc + t.amount, 0)
+
+    const allTotalPaymentsReceived = data.allTransactions
+      .filter(t => t.type === "payment_received")
+      .reduce((acc, t) => acc + t.amount, 0)
+
+    // Saldo Total Acumulado: (Total de dias marcados × R$50) + todas as entradas - todas as despesas - todos os pagamentos
+    const totalBalance = allTotalEarnings + allTotalIncome - allTotalExpenses - allTotalPaymentsReceived
 
     return {
       workedDays: workedDaysCount,
@@ -98,7 +118,8 @@ export function DashboardContent({ user, initialData, initialYear, initialMonth 
       totalIncome,
       totalExpenses,
       totalPaymentsReceived,
-      balance,
+      monthBalance,
+      totalBalance,
     }
   }, [data])
 

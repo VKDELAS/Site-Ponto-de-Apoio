@@ -11,7 +11,7 @@ async function getMonthData(userId: string, year: number, month: number) {
   const startDate = format(startOfMonth(new Date(year, month)), "yyyy-MM-dd")
   const endDate = format(endOfMonth(new Date(year, month)), "yyyy-MM-dd")
 
-  const [workedDaysResult, transactionsResult] = await Promise.all([
+  const [workedDaysResult, transactionsResult, allWorkedDaysResult, allTransactionsResult] = await Promise.all([
     supabase
       .from("worked_days")
       .select("*")
@@ -26,11 +26,21 @@ async function getMonthData(userId: string, year: number, month: number) {
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: false }),
+    supabase
+      .from("worked_days")
+      .select("*")
+      .eq("user_id", userId),
+    supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", userId),
   ])
 
   return {
     workedDays: (workedDaysResult.data as WorkedDay[]) || [],
     transactions: (transactionsResult.data as Transaction[]) || [],
+    allWorkedDays: (allWorkedDaysResult.data as WorkedDay[]) || [],
+    allTransactions: (allTransactionsResult.data as Transaction[]) || [],
   }
 }
 

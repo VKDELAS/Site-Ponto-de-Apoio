@@ -31,4 +31,6 @@ export type ActionLog = {
 export type MonthData = {
   workedDays: WorkedDay[]
   transactions: Transaction[]
+  allWorkedDays: WorkedDay[]
+  allTransactions: Transaction[]
 }
