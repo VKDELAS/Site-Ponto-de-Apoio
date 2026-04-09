@@ -41,6 +41,14 @@ export async function toggleWorkedDay(date: string) {
       return { error: error.message }
     }
 
+    // Também remover transação automática se existir para esse dia
+    await supabase
+      .from("transactions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .eq("type", "automatic_daily")
+
     await logAction({
       action_type: "delete",
       description: `Removeu dia trabalhado: ${date}`,
@@ -84,6 +92,13 @@ export async function deleteWorkedDay(id: string) {
     return { error: "Não autenticado" }
   }
 
+  // Buscar a data antes de deletar para poder remover a transação automática
+  const { data: dayData } = await supabase
+    .from("worked_days")
+    .select("date")
+    .eq("id", id)
+    .single()
+
   const { error } = await supabase
     .from("worked_days")
     .delete()
@@ -92,6 +107,15 @@ export async function deleteWorkedDay(id: string) {
 
   if (error) {
     return { error: error.message }
+  }
+
+  if (dayData) {
+    await supabase
+      .from("transactions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("date", dayData.date)
+      .eq("type", "automatic_daily")
   }
 
   await logAction({
@@ -212,7 +236,7 @@ async function logAction(data: {
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) return
-
+  
   await supabase.from("action_logs").insert({
     user_id: user.id,
     action_type: data.action_type,
