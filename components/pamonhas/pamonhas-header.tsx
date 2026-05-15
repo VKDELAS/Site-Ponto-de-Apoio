@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, LogOut, Home, Corn } from "lucide-react"
+import { Plus, Search, LogOut, Home, Wheat } from "lucide-react"
 
 type Props = {
   user: User
@@ -43,7 +43,7 @@ export function PamonhasHeader({
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500">
-            <Corn className="h-6 w-6 text-white" />
+            <Wheat className="h-6 w-6 text-white" />
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-bold">Pamonhas</h1>

@@ -18,7 +18,7 @@ import {
   Plus, 
   LogOut,
   User as UserIcon,
-  Corn
+  Wheat
 } from "lucide-react"
 import Image from "next/image"
 
@@ -114,7 +114,7 @@ export function DashboardHeader({
             className="gap-2"
             title="Gerenciar Estoque de Pamonhas"
           >
-            <Corn className="h-4 w-4" />
+            <Wheat className="h-4 w-4" />
             <span className="hidden sm:inline">Pamonhas</span>
           </Button>
 
