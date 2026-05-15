@@ -43,6 +43,7 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+  const isPamonhas = request.nextUrl.pathname.startsWith('/pamonhas')
   const isHomePage = request.nextUrl.pathname === '/'
 
   // Redirect logged in users away from auth pages
@@ -59,8 +60,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Protect dashboard routes
-  if (isDashboard && !user) {
+  // Protect dashboard and pamonhas routes
+  if ((isDashboard || isPamonhas) && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)

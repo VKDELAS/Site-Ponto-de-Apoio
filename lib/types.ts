@@ -28,6 +28,28 @@ export type ActionLog = {
   created_at: string
 }
 
+export type PamonhaSabor = {
+  id: string
+  user_id: string
+  nome: string
+  categoria: "SALGADA" | "DOCE"
+  barbante_cor: string
+  quantidade: number
+  created_at: string
+  updated_at: string
+}
+
+export type MovimentacaoEstoque = {
+  id: string
+  user_id: string
+  pamonha_id: string
+  tipo: "entrada" | "saida"
+  quantidade: number
+  observacao: string | null
+  created_at: string
+  pamonha?: PamonhaSabor
+}
+
 export type MonthData = {
   workedDays: WorkedDay[]
   transactions: Transaction[]

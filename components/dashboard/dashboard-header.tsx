@@ -17,7 +17,8 @@ import {
   ChevronRight, 
   Plus, 
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Corn
 } from "lucide-react"
 import Image from "next/image"
 
@@ -104,6 +105,17 @@ export function DashboardHeader({
           >
             <Plus className="mr-2 h-4 w-4" />
             <span>Nova Transação</span>
+          </Button>
+
+          <Button 
+            onClick={() => router.push("/pamonhas")} 
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            title="Gerenciar Estoque de Pamonhas"
+          >
+            <Corn className="h-4 w-4" />
+            <span className="hidden sm:inline">Pamonhas</span>
           </Button>
 
           <DropdownMenu>
