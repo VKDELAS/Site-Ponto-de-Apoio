@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, LogOut, Home, Wheat, Settings } from "lucide-react"
+import { Plus, Search, LogOut, LayoutDashboard, Wheat, Settings, DollarSign } from "lucide-react"
 import type { PamonhaBarbante } from "@/lib/types"
 
 type Props = {
@@ -67,30 +67,57 @@ export function PamonhasHeader({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 md:gap-3">
           <Button
             onClick={onAddSabor}
             size="sm"
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-sm gap-2"
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold shadow-sm gap-2 border-none"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Novo Sabor</span>
           </Button>
 
+          <div className="hidden h-8 w-[1px] bg-border md:block" />
+
+          <div className="hidden items-center gap-1 md:flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+              className="gap-2 font-medium hover:bg-yellow-500/10 hover:text-yellow-600"
+            >
+              <DollarSign className="h-4 w-4" />
+              Financeiro
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/pamonhas/configuracoes")}
+              className="gap-2 font-medium hover:bg-yellow-500/10 hover:text-yellow-600"
+            >
+              <Settings className="h-4 w-4" />
+              Barbantes
+            </Button>
+          </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border bg-muted/30">
-                <Home className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border bg-muted/30 hover:bg-yellow-500/10">
+                <LayoutDashboard className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                <Home className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => router.push("/dashboard")} className="md:hidden">
+                <DollarSign className="mr-2 h-4 w-4" />
                 Financeiro
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/pamonhas/configuracoes")}>
+              <DropdownMenuItem onClick={() => router.push("/pamonhas/configuracoes")} className="md:hidden">
                 <Settings className="mr-2 h-4 w-4" />
-                Configurações
+                Barbantes
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard Geral
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout} disabled={isLoading} className="text-red-500 focus:text-red-500">
                 <LogOut className="mr-2 h-4 w-4" />

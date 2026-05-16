@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { User } from "@supabase/supabase-js"
 import type { PamonhaBarbante } from "@/lib/types"
@@ -18,6 +18,11 @@ export function BarbantesSettingsContent({ user, initialBarbantes }: Props) {
   const router = useRouter()
   const [barbantes, setBarbantes] = useState(initialBarbantes)
   const [configOpen, setConfigOpen] = useState(false)
+
+  // Sincronizar estado local quando os dados iniciais mudarem (router.refresh)
+  useEffect(() => {
+    setBarbantes(initialBarbantes)
+  }, [initialBarbantes])
 
   function refreshData() {
     router.refresh()
@@ -38,18 +43,19 @@ export function BarbantesSettingsContent({ user, initialBarbantes }: Props) {
               variant="ghost"
               size="icon"
               onClick={() => router.push("/pamonhas")}
+              className="hover:bg-yellow-500/10"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-lg font-bold">Configuração de Barbantes</h1>
-              <p className="text-xs text-muted-foreground">Gerencie os tipos de barbante disponíveis</p>
+              <h1 className="text-lg font-bold">Gerenciamento de Barbantes</h1>
+              <p className="text-xs text-muted-foreground">Personalize as cores e tipos de identificação</p>
             </div>
           </div>
 
           <Button
             onClick={() => setConfigOpen(true)}
-            className="gap-2"
+            className="gap-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold border-none"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Novo Barbante</span>

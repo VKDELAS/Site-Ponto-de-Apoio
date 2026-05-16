@@ -101,7 +101,7 @@ export function DashboardHeader({
         <div className="flex items-center gap-3">
           <Button 
             onClick={onAddTransaction} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold shadow-sm border-none"
           >
             <Plus className="mr-2 h-4 w-4" />
             <span>Nova Transação</span>
@@ -109,9 +109,9 @@ export function DashboardHeader({
 
           <Button 
             onClick={() => router.push("/pamonhas")} 
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="gap-2"
+            className="gap-2 font-medium hover:bg-yellow-500/10 hover:text-yellow-600"
             title="Gerenciar Estoque de Pamonhas"
           >
             <Wheat className="h-4 w-4" />

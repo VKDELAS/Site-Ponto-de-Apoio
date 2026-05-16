@@ -25,6 +25,12 @@ export function PamonhasContent({ user, initialData }: Props) {
   const router = useRouter()
   const [sabores, setSabores] = useState(initialData.sabores)
   const [movimentacoes, setMovimentacoes] = useState(initialData.movimentacoes)
+
+  // Sincronizar estado local quando os dados iniciais mudarem (router.refresh)
+  useEffect(() => {
+    setSabores(initialData.sabores)
+    setMovimentacoes(initialData.movimentacoes)
+  }, [initialData])
   const [addSaborOpen, setAddSaborOpen] = useState(false)
   const [editSaborOpen, setEditSaborOpen] = useState(false)
   const [movimentacaoOpen, setMovimentacaoOpen] = useState(false)
