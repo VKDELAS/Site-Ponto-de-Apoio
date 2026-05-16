@@ -10,6 +10,7 @@ import { PamonhasDashboard } from "./pamonhas-dashboard"
 import { SaboresList } from "./sabores-list"
 import { MovimentacoesLog } from "./movimentacoes-log"
 import { AddSaborDialog } from "./add-sabor-dialog"
+import { EditSaborDialog } from "./edit-sabor-dialog"
 import { MovimentacaoDialog } from "./movimentacao-dialog"
 
 type Props = {
@@ -25,6 +26,7 @@ export function PamonhasContent({ user, initialData }: Props) {
   const [sabores, setSabores] = useState(initialData.sabores)
   const [movimentacoes, setMovimentacoes] = useState(initialData.movimentacoes)
   const [addSaborOpen, setAddSaborOpen] = useState(false)
+  const [editSaborOpen, setEditSaborOpen] = useState(false)
   const [movimentacaoOpen, setMovimentacaoOpen] = useState(false)
   const [selectedSabor, setSelectedSabor] = useState<PamonhaSabor | null>(null)
   const [movimentacaoType, setMovimentacaoType] = useState<"entrada" | "saida">("entrada")
@@ -46,6 +48,12 @@ export function PamonhasContent({ user, initialData }: Props) {
     setAddSaborOpen(true)
   }
 
+  // Handle edit sabor
+  function handleEditSabor(sabor: PamonhaSabor) {
+    setSelectedSabor(sabor)
+    setEditSaborOpen(true)
+  }
+
   // Handle movimentacao
   function handleMovimentacao(sabor: PamonhaSabor, tipo: "entrada" | "saida") {
     setSelectedSabor(sabor)
@@ -57,6 +65,7 @@ export function PamonhasContent({ user, initialData }: Props) {
   function handleSuccess() {
     refreshData()
     setAddSaborOpen(false)
+    setEditSaborOpen(false)
     setMovimentacaoOpen(false)
     setSelectedSabor(null)
   }
@@ -79,6 +88,7 @@ export function PamonhasContent({ user, initialData }: Props) {
             <SaboresList
               sabores={filteredSabores}
               onMovimentacao={handleMovimentacao}
+              onEdit={handleEditSabor}
             />
           </div>
 
@@ -97,13 +107,27 @@ export function PamonhasContent({ user, initialData }: Props) {
       />
 
       {selectedSabor && (
-        <MovimentacaoDialog
-          open={movimentacaoOpen}
-          onOpenChange={(open) => !open && setSelectedSabor(null)}
-          sabor={selectedSabor}
-          tipo={movimentacaoType}
-          onSuccess={handleSuccess}
-        />
+        <>
+          <EditSaborDialog
+            open={editSaborOpen}
+            onOpenChange={(open) => {
+              setEditSaborOpen(open)
+              if (!open) setSelectedSabor(null)
+            }}
+            sabor={selectedSabor}
+            onSuccess={handleSuccess}
+          />
+          <MovimentacaoDialog
+            open={movimentacaoOpen}
+            onOpenChange={(open) => {
+              setMovimentacaoOpen(open)
+              if (!open) setSelectedSabor(null)
+            }}
+            sabor={selectedSabor}
+            tipo={movimentacaoType}
+            onSuccess={handleSuccess}
+          />
+        </>
       )}
     </div>
   )

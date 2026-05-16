@@ -63,6 +63,43 @@ export async function addBarbante(params: {
   return { error: null, barbante: data as PamonhaBarbante }
 }
 
+export async function updateBarbante(params: {
+  id: string
+  nome: string
+  cor_principal: string
+  cor_secundaria?: string
+  is_especial?: boolean
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "Não autenticado", barbante: null }
+  }
+
+  const { data, error } = await supabase
+    .from("pamonha_barbantes")
+    .update({
+      nome: params.nome,
+      cor_principal: params.cor_principal,
+      cor_secundaria: params.cor_secundaria || null,
+      is_especial: params.is_especial || false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.id)
+    .eq("user_id", user.id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Erro ao atualizar barbante:", error)
+    return { error: error.message, barbante: null }
+  }
+
+  revalidatePath("/pamonhas")
+  return { error: null, barbante: data as PamonhaBarbante }
+}
+
 export async function deleteBarbante(barbante_id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

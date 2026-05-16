@@ -71,38 +71,28 @@ export function PamonhasHeader({
           <Button
             onClick={onAddSabor}
             size="sm"
-            className="gap-2"
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-sm gap-2"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Novo Sabor</span>
           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/pamonhas/configuracoes")}
-            title="Configurar Barbantes"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/dashboard")}
-            title="Voltar para Financeiro"
-          >
-            <Home className="h-4 w-4" />
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                {user.email?.split("@")[0]}
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border bg-muted/30">
+                <Home className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleLogout} disabled={isLoading}>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                <Home className="mr-2 h-4 w-4" />
+                Financeiro
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/pamonhas/configuracoes")}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} disabled={isLoading} className="text-red-500 focus:text-red-500">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </DropdownMenuItem>

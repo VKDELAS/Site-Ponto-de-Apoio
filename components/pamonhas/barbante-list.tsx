@@ -14,11 +14,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Trash2 } from "lucide-react"
+import { Trash2, Edit2 } from "lucide-react"
 import { deleteBarbante } from "@/lib/barbante-actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { getBarbanteCSSStyle } from "@/lib/barbante-utils"
+
+import { EditBarbanteDialog } from "./edit-barbante-dialog"
 
 type Props = {
   barbantes: PamonhaBarbante[]
@@ -27,6 +29,7 @@ type Props = {
 export function BarbantList({ barbantes }: Props) {
   const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingBarbante, setEditingBarbante] = useState<PamonhaBarbante | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async (barbante_id: string) => {
@@ -94,18 +97,43 @@ export function BarbantList({ barbantes }: Props) {
               </div>
             </div>
 
-            {/* Delete Button */}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setDeletingId(barbante.id)}
-              className="text-destructive hover:text-destructive ml-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {/* Actions */}
+            <div className="flex items-center gap-1 ml-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditingBarbante(barbante)}
+                className="text-muted-foreground hover:text-primary"
+                title="Editar Barbante"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setDeletingId(barbante.id)}
+                className="text-destructive hover:text-destructive"
+                title="Excluir Barbante"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Edit Dialog */}
+      {editingBarbante && (
+        <EditBarbanteDialog
+          open={!!editingBarbante}
+          onOpenChange={(open) => !open && setEditingBarbante(null)}
+          barbante={editingBarbante}
+          onSuccess={() => {
+            setEditingBarbante(null)
+            router.refresh()
+          }}
+        />
+      )}
 
       {/* Delete Dialog */}
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>

@@ -51,7 +51,7 @@ export async function addPamonhaSabor(params: {
         nome: params.nome,
         categoria: params.categoria,
         barbante_id: params.barbante_id,
-        quantidade: params.quantidade,
+        quantidade: 0, // Inicializa com 0
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
@@ -71,6 +71,63 @@ export async function addPamonhaSabor(params: {
   await logPamonhaAction({
     action_type: "add_sabor",
     description: `Adicionado sabor: ${params.nome}`,
+    sabor_id: data.id,
+  })
+
+  // Se a quantidade inicial for maior que 0, registra uma movimentação de entrada
+  if (params.quantidade > 0) {
+    await registrarMovimentacao({
+      pamonha_id: data.id,
+      tipo: "entrada",
+      quantidade: params.quantidade,
+      observacao: "Quantidade inicial na criação do sabor",
+    })
+  }
+
+  revalidatePath("/pamonhas")
+  return { error: null, sabor: data as PamonhaSabor }
+}
+
+export async function updatePamonhaSabor(params: {
+  id: string
+  nome: string
+  categoria: "SALGADA" | "DOCE"
+  barbante_id: string | null
+  quantidade: number
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "Não autenticado", sabor: null }
+  }
+
+  const { data, error } = await supabase
+    .from("pamonha_sabores")
+    .update({
+      nome: params.nome,
+      categoria: params.categoria,
+      barbante_id: params.barbante_id,
+      quantidade: params.quantidade,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.id)
+    .eq("user_id", user.id)
+    .select(`
+      *,
+      barbante:barbante_id(id, nome, cor_principal, cor_secundaria, is_especial)
+    `)
+    .single()
+
+  if (error) {
+    console.error("Erro ao atualizar sabor:", error)
+    return { error: error.message, sabor: null }
+  }
+
+  // Log action
+  await logPamonhaAction({
+    action_type: "update_sabor",
+    description: `Sabor atualizado: ${params.nome}`,
     sabor_id: data.id,
   })
 

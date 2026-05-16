@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Trash2, Plus, Minus } from "lucide-react"
+import { Trash2, Plus, Minus, Edit2 } from "lucide-react"
 import { deletePamonhaSabor } from "@/lib/pamonha-actions"
 import { getBarbanteCSSStyle } from "@/lib/barbante-utils"
 import { toast } from "sonner"
@@ -23,9 +23,10 @@ import { useRouter } from "next/navigation"
 type Props = {
   sabores: PamonhaSabor[]
   onMovimentacao: (sabor: PamonhaSabor, tipo: "entrada" | "saida") => void
+  onEdit: (sabor: PamonhaSabor) => void
 }
 
-export function SaboresList({ sabores, onMovimentacao }: Props) {
+export function SaboresList({ sabores, onMovimentacao, onEdit }: Props) {
   const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -143,8 +144,18 @@ export function SaboresList({ sabores, onMovimentacao }: Props) {
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => onEdit(sabor)}
+                  className="text-muted-foreground hover:text-primary"
+                  title="Editar Sabor"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => setDeletingId(sabor.id)}
                   className="text-destructive hover:text-destructive"
+                  title="Excluir Sabor"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
