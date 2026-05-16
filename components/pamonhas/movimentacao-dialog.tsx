@@ -7,6 +7,7 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { registrarMovimentacao } from "@/lib/pamonha-actions"
 import type { PamonhaSabor } from "@/lib/types"
+import { getBarbanteCSSStyle } from "@/lib/barbante-utils"
 import {
   Dialog,
   DialogContent,
@@ -110,10 +111,10 @@ export function MovimentacaoDialog({
         {/* Sabor Info */}
         <div className="rounded-lg bg-muted p-3">
           <div className="flex items-center gap-3">
-            <div
-              className="h-8 w-8 rounded-full border-2 border-gray-300"
-              style={{ background: sabor.barbante_cor }}
-            />
+	            <div
+	              className="h-8 w-8 rounded-full border-2 border-gray-300"
+	              style={{ background: getBarbanteCSSStyle(sabor.barbante) }}
+	            />
             <div>
               <p className="font-medium">{sabor.nome}</p>
               <p className="text-sm text-muted-foreground">

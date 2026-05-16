@@ -174,7 +174,12 @@ export async function getMovimentacoes(limit: number = 50) {
     .select(
       `
       *,
-      pamonha:pamonha_id(id, nome, categoria, barbante_cor)
+	      pamonha:pamonha_id(
+	        id, 
+	        nome, 
+	        categoria,
+	        barbante:barbante_id(id, nome, cor_principal, cor_secundaria, is_especial)
+	      )
     `
     )
     .eq("user_id", user.id)

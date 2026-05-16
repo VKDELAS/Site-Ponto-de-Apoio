@@ -38,7 +38,7 @@ export function PamonhasContent({ user, initialData }: Props) {
   // Filter sabores by search
   const filteredSabores = sabores.filter((s) =>
     s.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.barbante_cor.toLowerCase().includes(searchTerm.toLowerCase())
+    s.barbante?.nome.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   // Handle add sabor

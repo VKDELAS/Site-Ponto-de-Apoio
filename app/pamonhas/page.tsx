@@ -9,7 +9,10 @@ async function getPamonhasData(userId: string) {
   const [saboresResult, movimentacoesResult] = await Promise.all([
     supabase
       .from("pamonha_sabores")
-      .select("*")
+      .select(`
+        *,
+        barbante:barbante_id(id, nome, cor_principal, cor_secundaria, is_especial)
+      `)
       .eq("user_id", userId)
       .order("categoria", { ascending: true })
       .order("nome", { ascending: true }),
@@ -18,7 +21,12 @@ async function getPamonhasData(userId: string) {
       .select(
         `
         *,
-        pamonha:pamonha_id(id, nome, categoria, barbante_cor)
+        pamonha:pamonha_id(
+          id, 
+          nome, 
+          categoria,
+          barbante:barbante_id(id, nome, cor_principal, cor_secundaria, is_especial)
+        )
       `
       )
       .eq("user_id", userId)
