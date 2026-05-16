@@ -28,15 +28,26 @@ export type ActionLog = {
   created_at: string
 }
 
+export type PamonhaBarbante = {
+  id: string
+  user_id: string
+  nome: string
+  cor_principal: string
+  cor_secundaria: string | null
+  is_especial: boolean
+  created_at: string
+}
+
 export type PamonhaSabor = {
   id: string
   user_id: string
   nome: string
   categoria: "SALGADA" | "DOCE"
-  barbante_cor: string
+  barbante_id: string | null
   quantidade: number
   created_at: string
   updated_at: string
+  barbante?: PamonhaBarbante
 }
 
 export type MovimentacaoEstoque = {

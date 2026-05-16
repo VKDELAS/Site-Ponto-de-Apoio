@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
 import { addPamonhaSabor } from "@/lib/pamonha-actions"
+import { getBarbantes } from "@/lib/barbante-actions"
+import type { PamonhaBarbante } from "@/lib/types"
+import { getBarbanteCSSStyle } from "@/lib/barbante-utils"
 import {
   Dialog,
   DialogContent,
@@ -37,7 +40,7 @@ const formSchema = z.object({
   categoria: z.enum(["SALGADA", "DOCE"], {
     errorMap: () => ({ message: "Categoria é obrigatória" }),
   }),
-  barbante_cor: z.string().min(1, "Cor do barbante é obrigatória"),
+  barbante_id: z.string().nullable(),
   quantidade: z.coerce
     .number()
     .min(0, "Quantidade não pode ser negativa")
@@ -45,15 +48,6 @@ const formSchema = z.object({
 })
 
 type FormValues = z.infer<typeof formSchema>
-
-const BARBANTE_COLORS = [
-  { label: "Verde", value: "#22c55e" },
-  { label: "Branco", value: "#ffffff" },
-  { label: "Laranja", value: "#fb923c" },
-  { label: "Branco x Verde", value: "linear-gradient(45deg, #ffffff 50%, #22c55e 50%)" },
-  { label: "Verde x Laranja", value: "linear-gradient(45deg, #22c55e 50%, #fb923c 50%)" },
-  { label: "Branco x Laranja", value: "linear-gradient(45deg, #ffffff 50%, #fb923c 50%)" },
-]
 
 type Props = {
   open: boolean
@@ -64,16 +58,30 @@ type Props = {
 export function AddSaborDialog({ open, onOpenChange, onSuccess }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [barbantes, setBarbantes] = useState<PamonhaBarbante[]>([])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: "",
       categoria: "DOCE",
-      barbante_cor: "#22c55e",
+      barbante_id: null,
       quantidade: 0,
     },
   })
+
+  useEffect(() => {
+    if (open) {
+      loadBarbantes()
+    }
+  }, [open])
+
+  async function loadBarbantes() {
+    const result = await getBarbantes()
+    if (!result.error) {
+      setBarbantes(result.barbantes)
+    }
+  }
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true)
@@ -83,7 +91,7 @@ export function AddSaborDialog({ open, onOpenChange, onSuccess }: Props) {
       const result = await addPamonhaSabor({
         nome: values.nome,
         categoria: values.categoria,
-        barbante_cor: values.barbante_cor,
+        barbante_id: values.barbante_id,
         quantidade: values.quantidade,
       })
 
@@ -103,6 +111,8 @@ export function AddSaborDialog({ open, onOpenChange, onSuccess }: Props) {
       setIsLoading(false)
     }
   }
+
+  const selectedBarbante = barbantes.find(b => b.id === form.watch("barbante_id"))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -168,34 +178,35 @@ export function AddSaborDialog({ open, onOpenChange, onSuccess }: Props) {
               )}
             />
 
-            {/* Barbante Cor */}
+            {/* Barbante */}
             <FormField
               control={form.control}
-              name="barbante_cor"
+              name="barbante_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cor do Barbante</FormLabel>
+                  <FormLabel>Barbante (opcional)</FormLabel>
                   <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                    onValueChange={(value) => field.onChange(value || null)}
                     disabled={isLoading}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione um barbante..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {BARBANTE_COLORS.map((color) => (
-                        <SelectItem key={color.value} value={color.value}>
+                      <SelectItem value="">Sem barbante</SelectItem>
+                      {barbantes.map((barbante) => (
+                        <SelectItem key={barbante.id} value={barbante.id}>
                           <div className="flex items-center gap-2">
                             <div
                               className="h-4 w-4 rounded-full border border-gray-300"
                               style={{
-                                background: color.value,
+                                background: getBarbanteCSSStyle(barbante),
                               }}
                             />
-                            {color.label}
+                            {barbante.nome}
                           </div>
                         </SelectItem>
                       ))}
@@ -225,6 +236,22 @@ export function AddSaborDialog({ open, onOpenChange, onSuccess }: Props) {
                 </FormItem>
               )}
             />
+
+            {/* Preview */}
+            {selectedBarbante && (
+              <div className="rounded-lg border p-3 bg-muted/30">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Prévia do Barbante:</p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-6 w-6 rounded-full border-2 border-gray-300"
+                    style={{
+                      background: getBarbanteCSSStyle(selectedBarbante),
+                    }}
+                  />
+                  <span className="text-sm">{selectedBarbante.nome}</span>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">

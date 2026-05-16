@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { getBarbanteCSSStyle } from "@/lib/barbante-utils"
 
 type Props = {
   movimentacoes: MovimentacaoEstoque[]
@@ -69,14 +70,14 @@ export function MovimentacoesLog({ movimentacoes }: Props) {
                   </div>
 
                   {/* Barbante Color */}
-                  {pamonha?.barbante_cor && (
+                  {pamonha?.barbante && (
                     <div className="mt-1 flex items-center gap-1">
                       <div
                         className="h-3 w-3 rounded-full border border-gray-300"
-                        style={{ background: pamonha.barbante_cor }}
+                        style={{ background: getBarbanteCSSStyle(pamonha.barbante) }}
                       />
                       <span className="text-xs text-muted-foreground">
-                        {pamonha.barbante_cor}
+                        {pamonha.barbante.nome}
                       </span>
                     </div>
                   )}

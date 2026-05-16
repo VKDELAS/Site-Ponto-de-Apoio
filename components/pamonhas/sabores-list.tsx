@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Trash2, Plus, Minus } from "lucide-react"
 import { deletePamonhaSabor } from "@/lib/pamonha-actions"
+import { getBarbanteCSSStyle } from "@/lib/barbante-utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -74,6 +75,7 @@ export function SaboresList({ sabores, onMovimentacao }: Props) {
       <div className="grid gap-4 md:grid-cols-2">
         {sabores.map((sabor) => {
           const status = getStockStatus(sabor.quantidade)
+          const barbante = sabor.barbante as any
 
           return (
             <div
@@ -96,18 +98,20 @@ export function SaboresList({ sabores, onMovimentacao }: Props) {
               </div>
 
               {/* Barbante Color */}
-              <div className="mb-3 flex items-center gap-2">
-                <div
-                  className="h-6 w-6 rounded-full border-2 border-gray-300"
-                  style={{
-                    background: sabor.barbante_cor,
-                  }}
-                  title={sabor.barbante_cor}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {sabor.barbante_cor}
-                </span>
-              </div>
+              {barbante && (
+                <div className="mb-3 flex items-center gap-2">
+                  <div
+                    className="h-6 w-6 rounded-full border-2 border-gray-300"
+                    style={{
+                      background: getBarbanteCSSStyle(barbante),
+                    }}
+                    title={barbante.nome}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {barbante.nome}
+                  </span>
+                </div>
+              )}
 
               {/* Quantity */}
               <div className="mb-4 rounded-lg bg-muted p-3">

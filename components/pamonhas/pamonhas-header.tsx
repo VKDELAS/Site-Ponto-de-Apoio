@@ -12,13 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, LogOut, Home, Wheat } from "lucide-react"
+import { Plus, Search, LogOut, Home, Wheat, Settings } from "lucide-react"
+import type { PamonhaBarbante } from "@/lib/types"
 
 type Props = {
   user: User
   onAddSabor: () => void
   searchTerm: string
   onSearchChange: (value: string) => void
+  barbantes?: PamonhaBarbante[]
 }
 
 export function PamonhasHeader({
@@ -73,6 +75,15 @@ export function PamonhasHeader({
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Novo Sabor</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/pamonhas/configuracoes")}
+            title="Configurar Barbantes"
+          >
+            <Settings className="h-4 w-4" />
           </Button>
 
           <Button

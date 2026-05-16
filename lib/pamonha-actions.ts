@@ -14,7 +14,10 @@ export async function getPamonhaSabores() {
 
   const { data, error } = await supabase
     .from("pamonha_sabores")
-    .select("*")
+    .select(`
+      *,
+      barbante:barbante_id(id, nome, cor_principal, cor_secundaria, is_especial)
+    `)
     .eq("user_id", user.id)
     .order("categoria", { ascending: true })
     .order("nome", { ascending: true })
@@ -30,7 +33,7 @@ export async function getPamonhaSabores() {
 export async function addPamonhaSabor(params: {
   nome: string
   categoria: "SALGADA" | "DOCE"
-  barbante_cor: string
+  barbante_id: string | null
   quantidade: number
 }) {
   const supabase = await createClient()
@@ -47,13 +50,16 @@ export async function addPamonhaSabor(params: {
         user_id: user.id,
         nome: params.nome,
         categoria: params.categoria,
-        barbante_cor: params.barbante_cor,
+        barbante_id: params.barbante_id,
         quantidade: params.quantidade,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
     ])
-    .select()
+    .select(`
+      *,
+      barbante:barbante_id(id, nome, cor_principal, cor_secundaria, is_especial)
+    `)
     .single()
 
   if (error) {
