@@ -193,8 +193,8 @@ export function EditSaborDialog({ open, onOpenChange, onSuccess, sabor }: Props)
                 <FormItem>
                   <FormLabel>Barbante (opcional)</FormLabel>
                   <Select
-                    value={field.value || ""}
-                    onValueChange={(value) => field.onChange(value || null)}
+                    value={field.value ?? "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                     disabled={isLoading}
                   >
                     <FormControl>
@@ -203,7 +203,7 @@ export function EditSaborDialog({ open, onOpenChange, onSuccess, sabor }: Props)
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sem barbante</SelectItem>
+                      <SelectItem value="none">Sem barbante</SelectItem>
                       {barbantes.map((barbante) => (
                         <SelectItem key={barbante.id} value={barbante.id}>
                           <div className="flex items-center gap-2">
